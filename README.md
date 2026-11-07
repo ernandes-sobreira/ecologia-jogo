@@ -161,6 +161,18 @@ O status depende de **quem é o alimento, o parasita ou o dispersor**, não do s
 
 **Exemplo científico**: clique em **Carregar exemplo com fontes** na aba Ciência para criar relações com diferentes tipos de respaldo. A ação pede confirmação antes de substituir uma teia existente. Não substitui a teia automaticamente nem invalida projetos anteriores.
 
+### Resultados numéricos observados — não usados como calibração
+
+A aba Ciência também mostra cinco fichas de **observações publicadas**, com fonte, unidades, local/período e advertência sobre comparabilidade. Elas incluem:
+
+- **Onça/capivara:** 9 registros de capivara em 431 carcaças de presas de onças monitoradas (2,09%), no Pantanal Sul, conforme Perilli et al. (2016). Frequência de registros **não é taxa demográfica de predação**.
+- **Antas:** Zorzi (2009) identificou sementes de 63 espécies em 296 amostras fecais do Pantanal. Contagem de sementes não determina sobrevivência, germinação ou taxa de dispersão do jogo.
+- **Abelhas:** Boff et al. (2013) registraram 56 espécies de abelhas visitando 63 espécies de plantas durante 12 meses no Pantanal Sul. Visita **não prova polinização efetiva** de todas as plantas.
+- **Fitoplâncton:** estudo limnológico (2012) registrou diferenças entre ambientes durante águas baixas, com 1.428 indivíduos/mL no rio até 3.710 indivíduos/mL em lagoas. O catálogo do jogo utiliza índices abstratos, **não ind./mL**.
+- **Dequada:** Calheiros & Ferreira (1996) descrevem episódio com anoxia e CO₂ livre atingindo 79 mg/L. O modelo **não** converte seus índices 0–100 em mg/L.
+
+Essas fichas **não alimentam as equações automaticamente**. Para calibração real, seriam necessários conjuntos com unidades, sítios, períodos e métodos comparáveis aos estados e parâmetros de cada submodelo, além de estimativas de erro e validação fora da amostra.
+
 ### Laboratório de sensibilidade
 
 O arquivo `sensitivity-model.js` executa uma teia em **cópias descartáveis**. É possível escolher um organismo ou índice didático e 10, 20 ou 30 passos. O módulo roda a configuração de referência e muda **um fator de cada vez em −25% e +25%**: reprodução, capacidade de suporte, predação, competição, amplitude de inundação (se ativada) e carga orgânica (se ativada).
