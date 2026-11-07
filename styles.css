@@ -150,3 +150,47 @@
 .interaction-paths p{margin:5px 0 0}
 @media(max-width:1000px){.interaction-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.interaction-summary{grid-template-columns:1fr}.interaction-panel{padding:13px}}
+
+/* ETAPA 5 — identidade taxonômica e unidades de mensuração */
+.stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.stats .stat{min-height:69px;padding:11px 13px}
+.stats .stat-icon{font-size:25px;min-width:26px}
+.stats .stat strong{font-size:23px}
+.eco-edit{margin-top:10px;border-top:1px solid #dce9e0;padding-top:5px}
+.eco-identity-hint{background:#edf8f0;color:#567462;font-size:11px!important;
+  line-height:1.55;border-left:3px solid #83b894;border-radius:7px;padding:9px;margin:9px 0}
+#nValue:disabled{background:#edf1ed;color:#8c9b8f}
+.eco-kind-badge{display:inline-block;color:#526d60;border:1px solid #cddfd1;
+  background:#f5faf5;border-radius:5px;padding:2px 5px;font-size:10px;margin:3px 0}
+.catalog-card .eco-type-label{margin:5px 0;font-size:11px;font-weight:650;color:#3e7659}
+.catalog-card .catalog-scientific{margin:4px 0;font-size:11px;color:#335f4f;min-height:0}
+.catalog-card .eco-unit-label{display:block;font-size:10px;color:#758e7b;line-height:1.4;margin:4px 0 8px}
+.eco-diagnostic{margin-top:16px;border:1px solid #c7dacc;border-radius:16px;background:#fbfdf9;
+  padding:18px;box-shadow:var(--shadow)}
+.eco-diag-head h2{font-size:18px;color:#1d593e;margin:0}
+.eco-diag-head p{margin:5px 0 12px;color:#67816d;font-size:12px}
+.eco-group-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.eco-group{border:1px solid #dae9df;border-radius:10px;background:#fff;padding:10px;
+  display:flex;align-items:center;gap:9px;min-width:0}
+.eco-group b{display:block;color:#155b3c;font-size:22px}
+.eco-group span{font-size:11px;color:#5b7a68}
+.eco-placeholder{font-size:12px;color:#6e8976;grid-column:1/-1}
+.eco-species{background:#f2f8f3;margin-top:11px;padding:11px 13px;border-radius:10px;
+  font-size:12px;color:#27553c}
+.eco-species strong{font-size:13px}
+.eco-species p{line-height:1.6;margin:7px 0}
+.eco-species small{color:#67806f;font-size:10px}
+.eco-warnings{font-size:11px;color:#685b38}
+.eco-warnings strong{display:block;margin:12px 0 4px}
+.eco-warnings ul{margin:5px 0;padding-left:19px;line-height:1.55}
+.eco-warnings li{padding-bottom:4px}
+.eco-footnote{font-size:11px;line-height:1.55;color:#6f8576;margin:12px 0 0}
+.chart-eco-note{border-top:1px solid #ecf0eb;margin:12px 0 0;padding-top:8px;
+  font-size:11px;color:#607966;line-height:1.5}
+.results{min-width:0}.results #simTable{overflow:auto;max-width:100%}
+.results table{min-width:580px}
+.results table td,.results table th{font-size:11px;vertical-align:top}
+.node small{line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 3px}
+@media(max-width:1000px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.eco-group-counts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:400px){.eco-group-counts{grid-template-columns:1fr}.stats{gap:6px}.stats .stat{padding:8px}.stats .stat strong{font-size:19px}}
