@@ -14,12 +14,12 @@ document.addEventListener('error',function(ev){
 },true);
 const colors={Produtor:'#2eaa4b',Consumidor:'#e69b16',Predador:'#d64d40',Decompositor:'#9256af',Polinizador:'#d69d19',Recurso:'#5f9581',Comunidade:'#477f96',Detritívoro:'#99744b',Necrófago:'#745765',Parasita:'#ac4e47'};
 const store='teia-da-vida-pantanal-v3';let graph={nodes:[],edges:[]};try{const saved=JSON.parse(localStorage.getItem(store));if(saved&&Array.isArray(saved.nodes)&&Array.isArray(saved.edges))graph=saved}catch(e){}
-let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[];
+let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[],bioState=null,bioReport=null;
 const persist=()=>{try{localStorage.setItem(store,JSON.stringify(graph))}catch(e){}};
 let toastTimer;function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600)}
 function nodeById(id){return graph.nodes.find(n=>n.id===id)}function spec(id){return base.find(s=>s.id===id)}function edgeId(){return 'e'+Date.now()+Math.random().toString(36).slice(2,7)}
 function selectedSpec(){return spec(preset)}
-function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(()=>{drawEdges();renderFlood()});if(view==='simulacoes')requestAnimationFrame(()=>{drawChart();renderFlood()});window.scrollTo({top:0,behavior:'instant'})}
+function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(()=>{drawEdges();renderFlood()});if(view==='simulacoes')requestAnimationFrame(()=>{drawChart();renderFlood();renderBio()});window.scrollTo({top:0,behavior:'instant'})}
 function roleCss(role){return /^[\wÀ-ÿ ]+$/.test(role)?role:'Outro'}
 function itemTile(s){return '<button class="tile'+(s.id===preset?' selected':'')+'" data-spec="'+esc(s.id)+'" draggable="true" title="'+esc(s.name)+'"><img src="'+s.image+'" alt="Ilustração de '+esc(s.name)+'" draggable="false"><b>'+esc(s.name)+'</b><span class="role-tag '+roleCss(s.role)+'">'+esc(s.role)+'</span></button>'}
 function renderLibrary(){let q=$('search').value.trim().toLocaleLowerCase('pt-BR');let visible=base.filter(s=>(filter==='Todos'||s.role===filter||(filter==='Consumidores'&&['Consumidor','Predador','Detritívoro','Necrófago','Parasita'].includes(s.role)))&&s.name.toLocaleLowerCase('pt-BR').includes(q));$('library').innerHTML=visible.map(itemTile).join('');$('library').querySelectorAll('.tile').forEach(el=>attachTile(el));}
@@ -95,7 +95,7 @@ function changeEdge(key,value){
 }
 function closeEdge(){edgeSelection=null;$('edgeEditor').hidden=true}
 function deleteEdge(){graph.edges=graph.edges.filter(e=>e.id!==edgeSelection);closeEdge();persist();renderAll();toast('Ligação excluída')}
-function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood()}
+function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio()}
 function attachTile(el){let id=el.dataset.spec;el.onclick=()=>{if(el.dataset.justDragged==='1'){el.dataset.justDragged='0';return}selectSpec(spec(id));addNode(spec(id))};el.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='copy'};el.onpointerdown=ev=>{if(ev.pointerType==='mouse')return;const s=spec(id),ghost=document.createElement('div');ghost.className='drag-ghost';ghost.innerHTML='<img src="'+s.image+'"><b>'+esc(s.name)+'</b>';document.body.appendChild(ghost);function move(e){ghost.style.left=e.clientX+10+'px';ghost.style.top=e.clientY-35+'px';let r=$('board').getBoundingClientRect();$('board').classList.toggle('drop-active',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)}function done(e){const travel=Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY);if(travel>10){el.dataset.justDragged='1';setTimeout(()=>el.dataset.justDragged='0',500)}window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',done);window.removeEventListener('pointercancel',done);ghost.remove();$('board').classList.remove('drop-active');let r=$('board').getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){let c=dropPoint(e);addNode(s,c.x,c.y);switchView('teia')}}move(ev);window.addEventListener('pointermove',move);window.addEventListener('pointerup',done);window.addEventListener('pointercancel',done)}}
 function dropPoint(ev){let r=$('webContent').getBoundingClientRect();return {x:Math.max(.08,Math.min(.92,(ev.clientX-r.left)/r.width)),y:Math.max(.12,Math.min(.88,(ev.clientY-r.top)/r.height))}}
 function exampleNames(){return graph.nodes.map(n=>n.name).join(', ')}
@@ -141,16 +141,88 @@ function renderFlood(){
  if(badge){badge.hidden=!hydro.enabled;badge.textContent=hydro.label+' · conectividade '+Math.round(hydro.connectivity*100)+'/100';}
 }
 
+function bioOptions(){return {
+ enabled:!!$('bioEnabled')?.checked,
+ load:Number($('bioLoad')?.value||0),
+ microbes:Number($('bioMicrobes')?.value||0),
+ aeration:Number($('bioAeration')?.value||0),
+ temperature:Number($('bioTemperature')?.value||0)
+}}
+function renderBio(){
+ if(!$('bioChart'))return;
+ const options=bioOptions(),hydro=pulseAt(simStep),
+  initial=window.TeiaBiogeo?.init(graph.nodes,options,hydro)||null;
+ const state=bioState||initial;
+ if(!state){$('bioStatusText').textContent='Módulo não carregado. Atualize a página.';return}
+ const report=bioReport||state.history[state.history.length-1];
+ const metrics={Organic:state.organic,Oxygen:state.oxygen,Nutrients:state.nutrients,Carbon:state.carbon};
+ for(const [name,value] of Object.entries(metrics)){
+   const metric=$('bio'+name),bar=$('bio'+name+'Bar');
+   if(metric)metric.textContent=fmt(Math.max(0,Math.min(100,value)))+' / 100';
+   if(bar)bar.style.width=Math.min(100,Math.max(0,value))+'%';
+ }
+ const risk=options.enabled?report.risk:'desligado';
+ $('bioStatus').dataset.status=risk;
+ $('bioStatusTitle').textContent=options.enabled?(report.label||'Condição inicial'):'Módulo desativado';
+ $('bioStatusText').textContent=options.enabled?(report.source||'Matéria orgânica e processos microbianos controlam os índices da água.'):
+   'Os estoques ficam constantes e não causam efeitos demográficos.';
+ const hist=state.history||[];
+ const series=[
+  {field:'oxygen',color:'#1294b7'},
+  {field:'organic',color:'#9f8658'},
+  {field:'nutrients',color:'#55a04c'},
+  {field:'carbon',color:'#ac6fa1'}
+ ];
+ let chart='<path d="M42 10V145H640" stroke="#c8d8d1" stroke-width="1.4" fill="none"/>';
+ for(let i=0;i<=4;i++){const v=i*25,y=145-v*1.25;chart+='<path d="M42 '+y+'H640" stroke="#edf1eb" stroke-width="1"/><text x="37" y="'+(y+4)+'" font-size="11" fill="#7b8e80" text-anchor="end">'+v+'</text>'}
+ for(let i=0;i<=3;i++){const x=42+i*10*14.2;chart+='<text x="'+x+'" y="163" text-anchor="middle" font-size="11" fill="#7b8e80">'+i*20+'</text>'}
+ for(const serie of series){
+   const d=hist.map((v,i)=>(i?'L':'M')+(42+Math.min(60,v.step)*598/60).toFixed(1)+' '+(145-Math.max(0,Math.min(100,v[serie.field]))*1.25).toFixed(1)).join(' ');
+   chart+='<path d="'+d+'" fill="none" stroke="'+serie.color+'" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
+   if(hist.length===1)chart+='<circle cx="42" cy="'+(145-hist[0][serie.field]*1.25)+'" r="3.3" fill="'+serie.color+'"/>';
+ }
+ chart+='<text x="341" y="181" text-anchor="middle" fill="#6e8174" font-size="11">Passos abstratos da simulação</text>';
+ $('bioChart').innerHTML=chart;
+ const processes=$('bioProcess');
+ if(processes){
+  const orgs=graph.nodes.filter(n=>n.role==='Decompositor'||/biofilme/i.test(n.name)).length;
+  if(bioState && options.enabled){
+    processes.innerHTML='<strong>Fluxos do passo '+simStep+'</strong><p>'+esc(report.source||'')+'</p>'+
+    '<div class="bio-flow"><span>Entrada orgânica: +'+fmt(report.inputs)+'</span><span>Decomposição: '+fmt(report.decomposed)+'</span>'+
+    '<span>Demanda de O₂: '+fmt(report.respiration)+'</span><span>Reaeração: +'+fmt(report.reaeration)+'</span>'+
+    '<span>Fotossíntese (potencial): +'+fmt(report.photosynthesis)+'</span><span>Absorção de nutrientes: '+fmt(report.uptake)+'</span></div>'+
+    '<p class="bio-small">Elementos decompositores/biofilmes na teia: <b>'+orgs+'</b>. As ligações e os índices de organismos não são transformados diretamente em fluxos medidos.</p>';
+  }else{
+    processes.innerHTML='<strong>Como os processos funcionam</strong><p>Matéria orgânica submersa → decomposição microbiana → nutrientes e CO₂ relativos; a decomposição pode consumir oxigênio, enquanto fotossíntese e reaeração podem repô-lo.</p><p class="bio-small">Elementos decompositores/biofilmes na teia: <b>'+orgs+'</b>.</p>';
+  }
+ }
+ for(const [id,value,suffix] of [
+  ['bioLoadOut',options.load,' / 100'],
+  ['bioMicrobesOut',options.microbes,'%'],
+  ['bioAerationOut',options.aeration,'%'],
+  ['bioTemperatureOut',options.temperature,' / 100']
+ ])if($(id))$(id).textContent=value+suffix;
+ const overlay=$('waterQualityOverlay'),chip=$('waterQualityChip');
+ if(overlay){
+   const opacity=options.enabled?Math.min(.42,Math.max(0,(55-state.oxygen)/100)) :0;
+   overlay.style.opacity=opacity;overlay.style.height=Math.round(10+(hydro?.inundated||.3)*50)+'%';
+ }
+ if(chip){
+   chip.hidden=!options.enabled||!bioState||state.oxygen>=46;
+   if(!chip.hidden)chip.textContent='Oxigênio '+fmt(state.oxygen)+'/100 · '+(risk==='alto'?'risco elevado no modelo':'atenção no modelo');
+ }
+}
 function cancelSimulation(){
  stopTimer();
  if(simInitial)graph.nodes.forEach(n=>{const first=simInitial[n.id];if(first){n.count=first.count;n.mass=first.mass}});
- simInitial=null;simModelState=null;simReports=[];simStep=0;simHistory={};
+ simInitial=null;simModelState=null;simReports=[];simStep=0;simHistory={};bioState=null;bioReport=null;
  $('timeSlider').value=0;$('stepOut').textContent='0 / 60';
 }
 function ensureSim(){
  if(simInitial)return;
  simInitial=Object.fromEntries(graph.nodes.map(n=>[n.id,{count:n.count,mass:n.mass}]));
  simModelState=window.TeiaDynamics.init(graph.nodes);
+ if(window.TeiaBiogeo)bioState=window.TeiaBiogeo.init(graph.nodes,bioOptions(),pulseAt(0));
  simHistory=Object.fromEntries(graph.nodes.map(n=>[n.id,[n.count]]));
 }
 function advance(){
@@ -158,7 +230,13 @@ function advance(){
  if(!window.TeiaDynamics){stopTimer();toast('Motor ecológico indisponível; atualize a página.');return}
  if(!graph.nodes.some(n=>n.role!=='Recurso')){stopTimer();toast('Adicione pelo menos um organismo para simular.');return}
  ensureSim();
- const outcome=window.TeiaDynamics.advance(graph.nodes,graph.edges,simModelState,modelOptions(simStep+1));
+ let options=modelOptions(simStep+1);
+ if(window.TeiaBiogeo){
+   const bio=window.TeiaBiogeo.advance(graph.nodes,bioState,bioOptions(),options.flood);
+   bioState=bio.state;bioReport=bio.report;
+   options.biogeoEffects=Object.fromEntries(graph.nodes.map(n=>[n.id,window.TeiaBiogeo.effects(n,bio.state,bioOptions())]));
+ }
+ const outcome=window.TeiaDynamics.advance(graph.nodes,graph.edges,simModelState,options);
  simModelState=outcome.state;simReports=outcome.reports;simStep=outcome.state.step;
  for(const v of outcome.values){
    const n=nodeById(v.id);
@@ -199,7 +277,8 @@ function renderDrivers(){
   ['Competição por alimento',report.competition,true],
   ['Herbivoria / predação',report.predation,true],
   ['Estresse ambiental da seca',report.climate,true],
-  ['Restrição de habitat pelo pulso',report.hydrology||0,true]
+  ['Restrição de habitat pelo pulso',report.hydrology||0,true],
+  ['Estresse por oxigênio reduzido',report.waterQuality||0,true]
  ];
  const rows=factors.filter(x=>x[1]>.0005).map(([label,value,loss])=>
    '<div class="sim-factor'+(loss?' loss':'')+'"><span>'+label+'</span><b>'+(loss?'−':'+')+fmt(value)+'</b></div>').join('');
@@ -210,6 +289,7 @@ function renderDrivers(){
  '<p class="sim-eco-footnote">Capacidade de suporte estimada (K): <b>'+(report.capacity==null?'—':fmt(report.capacity))+'</b> unidades · Alimento disponível agora: <b>'+f+'</b> da referência · Efeito alimentar aplicado à reprodução: <b>'+lagF+'</b> · Atraso configurado: <b>'+opts.lag+' passo(s)</b>.'+
  (report.implicitDiet?' Esta população não tem ligação de consumo: o modelo assume alimentação externa não cadastrada.':'')+
  (opts.flood?.enabled&&report.habitatLabel?' Habitat: <b>'+esc(report.habitatLabel)+'</b> · fator de capacidade pelo pulso: <b>'+fmt(report.habitatCapacity||1)+'×</b>.':'')+
+ (bioState&&bioOptions().enabled?' Oxigênio relativo: <b>'+fmt(bioState.oxygen)+'/100</b> · capacidade por qualidade da água: <b>'+fmt(report.waterCapacity||1)+'×</b>.' : '')+
  ' Os valores internos têm decimais; os nós arredondam a abundância para facilitar a leitura.</p>';
  const ranked=simReports.filter(x=>x.role!=='Recurso'&&Math.abs(x.change)>.0005).sort((a,b)=>Math.abs(b.change/Math.max(1,b.before))-Math.abs(a.change/Math.max(1,a.before))).slice(0,3);
  summary.innerHTML=ranked.map(x=>'<div class="sim-why-card"><strong>'+esc(x.name)+' '+(x.change>0?'↑':'↓')+' '+fmt(Math.abs(x.change/Math.max(1,x.before)*100))+'%</strong><small>'+esc(x.reason)+'</small></div>').join('');
@@ -221,6 +301,22 @@ function wire(){document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=
 for(let id of ['exampleHome','exampleTeia'])$(id).onclick=example;for(let id of ['exampleAquatic','exampleAquaticTeia'])$(id).onclick=()=>exampleHabitat('aquatica');for(let id of ['exampleTerrestrial','exampleTerrestrialTeia'])$(id).onclick=()=>exampleHabitat('terrestre');$('startBlank').onclick=cleanGraph;$('clearTeia').onclick=cleanGraph;$('connectMode').onclick=()=>{connectMode=!connectMode;firstNode=null;setConnectState();drawNodes()};$('board').ondragover=e=>{e.preventDefault();$('board').classList.add('drop-active')};$('board').ondragleave=()=>$('board').classList.remove('drop-active');$('board').ondrop=e=>{e.preventDefault();$('board').classList.remove('drop-active');let s=spec(e.dataTransfer.getData('text/plain'));if(s){const p=dropPoint(e);addNode(s,p.x,p.y);switchView('teia')}};$('arrangeNodes').onclick=()=>{graph.nodes.forEach((n,i)=>{n.x=.18+(i%4)*.21;n.y=.22+Math.floor(i/4)*.22});persist();renderAll()};$('zoomMinus').onclick=()=>{zoom=Math.max(.8,zoom-.05);$('webContent').style.transform='scale('+zoom+')'};$('zoomPlus').onclick=()=>{zoom=Math.min(1.15,zoom+.05);$('webContent').style.transform='scale('+zoom+')'};
 $('edgeDirection').onchange=e=>changeEdge('direction',e.target.value);$('edgeKind').onchange=e=>changeEdge('kind',e.target.value);$('edgeNature').onchange=e=>changeEdge('nature',e.target.value);$('edgeFood').onchange=e=>changeEdge('foodId',e.target.value);$('edgeColor').oninput=e=>changeEdge('color',e.target.value);$('edgeWeight').oninput=e=>{let w=Number(e.target.value);changeEdge('weight',w);$('edgeWeightOut').textContent=fmt(w)};document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{$('edgeColor').value=b.dataset.color;changeEdge('color',b.dataset.color)});$('closeEdge').onclick=closeEdge;$('doneEdge').onclick=closeEdge;$('deleteEdge').onclick=deleteEdge;
 for(let id of ['exportTop'])$(id).onclick=download;const importButton=document.createElement('button');importButton.textContent='Importar JSON';importButton.id='importJson';importButton.onclick=()=>file.click();document.querySelector('.top-actions').appendChild(importButton);const file=document.createElement('input');file.type='file';file.accept='.json,application/json';file.hidden=true;file.onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.nodes)||!Array.isArray(x.edges))throw Error();cancelSimulation();graph={nodes:x.nodes.filter(n=>spec(n.specId)),edges:x.edges};persist();renderAll();switchView('teia');toast('Teia importada')}catch(err){toast('Arquivo JSON inválido')}file.value=''};document.body.appendChild(file);
+for(const id of ['bioEnabled','bioLoad','bioMicrobes','bioAeration','bioTemperature']){
+ const el=$(id);
+ if(el)el.onchange=resetSim;
+ if(el&&id!=='bioEnabled')el.oninput=renderBio;
+}
+$('bioExperiment').onclick=()=>{
+ $('bioEnabled').checked=true;
+ $('pulseEnabled').checked=true;
+ $('bioLoad').value=100;
+ $('bioMicrobes').value=150;
+ $('bioAeration').value=5;
+ $('bioTemperature').value=90;
+ $('scenario').value='equilibrio';
+ resetSim();
+ toast('Experimento preparado: carga orgânica elevada, alta atividade microbiana e baixa reaeração.');
+};
 $('pulseEnabled').onchange=resetSim;
 $('pulseStart').onchange=resetSim;
 $('pulseAmplitude').oninput=()=>renderFlood();
