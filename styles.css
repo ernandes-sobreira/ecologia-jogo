@@ -324,3 +324,12 @@
  .sensitivity-row>span:nth-child(4),.sensitivity-row>span:nth-child(5){display:none}
  .sensitivity-head>span:nth-child(4),.sensitivity-head>span:nth-child(5){display:none}
  .science-intro{padding:11px}}
+
+/* Tela pequena: preservar TODAS as colunas da sensibilidade com rolagem horizontal,
+   em vez de ocultar resultados (+25% e maior desvio). */
+@media(max-width:590px){
+ .sensitivity-results{overflow-x:auto}
+ .sensitivity-row{min-width:600px;grid-template-columns:minmax(150px,1.5fr) repeat(3,minmax(65px,.6fr)) minmax(80px,.7fr) minmax(95px,.9fr)}
+ .sensitivity-row>span:nth-child(4),.sensitivity-row>span:nth-child(5),
+ .sensitivity-head>span:nth-child(4),.sensitivity-head>span:nth-child(5){display:block}
+}
