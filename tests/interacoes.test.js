@@ -114,4 +114,17 @@ function report(result,id){return result.report.find(x=>x.id===id)}
  const result=test(nodes,[bad]);
  assert.ok(result.interactions.warnings.length>0);
 }
+// Detritivoria facilita fragmentação orgânica no módulo limnológico (não é decomposição microbiana).
+{
+ const bio=require('../biogeochemistry.js'),flood=require('../flood-pulse.js');
+ const nodes=[node('s','Serapilheira','Recurso',0),node('m','Minhoca','Detritívoro',30),node('f','Fungos','Decompositor',12)];
+ const hyd=flood.at(8,{enabled:true,start:'enchente'});
+ const base={enabled:true,load:50,microbes:100,aeration:55,temperature:50};
+ const no=bio.advance(nodes,bio.init(nodes,base,hyd),base,hyd);
+ const edges=[edge('s','m','detritivoria',{foodId:'s'})];
+ const yes=bio.advance(nodes,bio.init(nodes,{...base,edges},hyd),{...base,edges},hyd);
+ assert.equal(yes.report.detritivoreLinks,1);
+ assert.ok(yes.report.decomposed>no.report.decomposed);
+ assert.ok(yes.report.fragmentationFactor>1);
+}
 console.log('ETAPA 4 OK: processos distintos, atrasos, necrofagia, herbivoria, papéis e mediação indireta');
