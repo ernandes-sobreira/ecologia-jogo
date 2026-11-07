@@ -79,3 +79,50 @@
 .flood-board-chip[hidden]{display:none!important}
 @media(max-width:800px){.flood-layout{grid-template-columns:1fr}.flood-panel{padding:13px}.flood-phase-buttons{gap:4px}.flood-phase-buttons button{font-size:11px;padding:9px 3px}}
 @media(max-width:530px){.flood-metrics{grid-template-columns:1fr}.flood-phase-caption{font-size:11px}.flood-head h2{font-size:17px}}
+
+/* Teia da Vida — etapa 3: processos de decomposição (índices didáticos) */
+.bio-panel{border:1px solid #c5ded0;border-radius:17px;padding:17px 19px;margin-bottom:15px;background:linear-gradient(135deg,#fffdf6,#f6faf5 60%,#eaf3f0);box-shadow:var(--shadow)}
+.bio-head{display:flex;justify-content:space-between;align-items:start;gap:15px;flex-wrap:wrap}
+.bio-head h2{font-size:19px;margin:0 0 5px;color:#204b37}.bio-head p{margin:0;max-width:760px;font-size:12px;line-height:1.5;color:#5a7763}
+.bio-toggle{display:flex;align-items:center;gap:8px;border:1px solid #c6ddd1;background:#fff;padding:8px 12px;border-radius:22px;font-size:12px;font-weight:750;color:#1c6847;cursor:pointer}
+.bio-toggle input{width:16px;height:16px;accent-color:#23795b}
+.bio-workspace{display:grid;grid-template-columns:minmax(220px,.73fr) minmax(300px,1.5fr);gap:16px;margin:14px 0}
+.bio-controls{padding:12px 13px;border:1px solid #e1e8de;border-radius:13px;background:#fff}
+.bio-controls label{display:block;color:#315c46;font-weight:700;font-size:12px;margin-bottom:14px}
+.bio-controls output{float:right;font-size:12px;font-variant-numeric:tabular-nums;color:#117651}
+.bio-controls input[type=range]{width:100%;display:block;accent-color:#14946c;margin-top:9px}
+.bio-controls .bio-small{font-size:11px;color:#6c8474;line-height:1.5;margin:10px 0 0}
+.bio-preset{background:#fff4dd;border-color:#e6c990;color:#8c571b;font-size:12px;width:100%;margin-bottom:4px}
+.bio-preset:hover{background:#ffecd1}
+.bio-observation{background:#fff;border:1px solid #e0e8df;border-radius:13px;padding:12px;min-width:0}
+.bio-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.bio-metrics>div{background:#f6faf7;padding:9px 10px;border:1px solid #e6eeea;border-radius:10px;min-width:0}
+.bio-metrics span{font-size:10px;line-height:1.35;color:#6b8073;display:block;margin-bottom:5px}
+.bio-metrics strong{font-size:19px;color:#1f573b;font-variant-numeric:tabular-nums;display:block}
+.bio-meter{height:5px;border-radius:9px;overflow:hidden;background:#e3eae4;margin-top:6px}
+.bio-meter i{display:block;height:100%;width:0%;transition:width .2s;background:#9f8658}
+#bioOxygenBar{background:#1294b7}#bioNutrientsBar{background:#55a04c}#bioCarbonBar{background:#ac6fa1}
+.bio-status{display:grid;grid-template-columns:minmax(130px,.8fr) minmax(160px,1.8fr);gap:8px;align-items:center;background:#ecf8f1;border-radius:10px;border:1px solid #c9e4d4;padding:9px;margin:10px 0 7px;font-size:11px;color:#456c56}
+.bio-status strong{color:#23724d;font-size:12px}
+.bio-status[data-status="atenção"]{background:#fff5de;border-color:#f0d5a3;color:#8b672e}
+.bio-status[data-status="atenção"] strong{color:#986521}
+.bio-status[data-status="alto"]{background:#fff0e8;border-color:#edbeb1;color:#93452d}
+.bio-status[data-status="alto"] strong{color:#b0442e}
+.bio-status[data-status="desligado"]{background:#eef3ef;color:#788378}
+.bio-observation svg{display:block;width:100%;height:auto;max-height:172px}
+.bio-chart-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:#5e7365}
+.bio-chart-legend span{display:inline-flex;align-items:center;gap:4px}
+.bio-chart-legend i{display:inline-block;width:16px;height:4px;border-radius:2px}
+.bio-key-o{background:#1294b7}.bio-key-d{background:#9f8658}.bio-key-n{background:#55a04c}.bio-key-c{background:#ac6fa1}
+.bio-process{border:1px solid #e6eee8;background:#fbfdf8;border-radius:11px;padding:11px 13px;font-size:12px;color:#41614e}
+.bio-process strong{display:block;color:#20593b;margin-bottom:4px;font-size:13px}
+.bio-process p{margin:0;line-height:1.5}
+.bio-process .bio-flow{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.bio-process .bio-flow span{padding:5px 9px;border:1px solid #dce9dd;border-radius:8px;background:#f3faf2;color:#42684c;font-size:10px}
+.bio-disclaimer{font-size:11px;line-height:1.6;color:#688372;margin:9px 0 0}
+.bio-disclaimer a{color:#18745b;text-decoration:underline}
+.web-board .water-quality-overlay{position:absolute;bottom:0;left:0;right:0;height:0;z-index:1;opacity:0;pointer-events:none;background:linear-gradient(180deg,#a88a6b1a,#93725270);transition:height .35s,opacity .35s}
+.web-board .water-quality-chip{position:absolute;z-index:6;bottom:62px;left:9px;color:#914b35;font-size:11px;font-weight:750;border:1px solid #e9b39a;border-radius:8px;background:#fff5e9ee;padding:6px 8px;pointer-events:none}
+.water-quality-chip[hidden]{display:none!important}
+@media(max-width:900px){.bio-workspace{grid-template-columns:1fr}.bio-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:510px){.bio-panel{padding:12px}.bio-status{grid-template-columns:1fr}.bio-metrics strong{font-size:18px}}
