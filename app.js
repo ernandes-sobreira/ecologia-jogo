@@ -727,7 +727,7 @@ function prepareMission(){
  const id=missionActive(),M=window.TeiaMissions;
  if(graph.nodes.length&&!confirm('Preparar o cenário da missão vai substituir a teia ativa. Uma cópia da primeira teia anterior será guardada para restaurar. Continuar?'))return;
  // Preserve the first nonempty pre-mission graph even across multiple challenges.
- if(!missionBackupExists()&&graph.nodes.length){
+ if(!missionBackupExists()&&graph.nodes.length&&!missionProgress.presetActive){
   try{localStorage.setItem(missionBackupKey,JSON.stringify(graph))}catch(e){
    toast('Não foi possível preservar sua teia. Exporte o JSON antes de iniciar.');
    return;
@@ -748,7 +748,7 @@ function prepareMission(){
  $('reproFactor').value='1';$('capacityFactor').value='1';$('predationFactor').value='1';
  $('competitionFactor').value='.5';$('lagSteps').value='2';
  if(!missionProgress.started.includes(id))missionProgress.started.push(id);
- missionProgress.active=id;persistMission();persist();
+ missionProgress.active=id;missionProgress.presetActive=id;persistMission();persist();
  missionFeedbackText={id,success:false,
   message:id==='dequada'?'Experimento preparado com carga orgânica elevada e pouca reaeração. Abra Simulações e acompanhe o oxigênio.':
     'Cenário preparado. Agora investigue, faça as ligações solicitadas e escolha sua explicação.'};
@@ -791,7 +791,7 @@ function restoreMissionGraph(){
   cancelSimulation();graph={nodes:saved.nodes,edges:saved.edges};
   selected=null;firstNode=null;closeEdge();persist();
   localStorage.removeItem(missionBackupKey);
-  missionProgress.active=null;persistMission();missionFeedbackText=null;
+  missionProgress.active=null;missionProgress.presetActive=null;persistMission();missionFeedbackText=null;
   renderAll();switchView('teia');toast('Sua teia anterior foi restaurada.');
  }catch(e){toast('Falha ao restaurar a cópia anterior; ela foi preservada.')}
 }
