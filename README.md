@@ -54,8 +54,26 @@ Referência didática sobre crescimento logístico, regulação dependente da de
 
 **Base conceitual:** estudos sobre conectividade lateral e comunidades de peixes nas lagoas do Pantanal, como [Boletim do Instituto de Pesca (2018)](https://institutodepesca.org/index.php/bip/pt_BR/article/view/1276) e materiais da Embrapa Pantanal.
 
+## Etapa 3 — decomposição e ciclagem de nutrientes (motor conceitual)
+
+A aba **Simulações** oferece um laboratório de `Matéria orgânica → decomposição microbiana → nutrientes + CO₂ → consumo de oxigênio`.
+
+- Os índices **matéria orgânica, oxigênio, nutrientes e CO₂** variam de 0 a 100 e **não** são concentrações, massas ou fluxos medidos.
+- Controles: **carga orgânica inicial**, **atividade microbiana**, **reaeração da água** e **temperatura relativa**.
+- Clique **Carregar exemplo de decomposição** para uma teia com capim, serapilheira, fungos, bactérias, fitoplâncton, zooplâncton, lambari, traíra e jacaré. Depois clique **Testar carga orgânica elevada** e **Executar**.
+- A presença de fungos/bactérias e de detritos na teia modifica o modelo; ligações **diretas** marcadas **Decomposição**, entre detritos e decompositores, também aumentam uma atividade de decomposição *hipotética*.
+- A subida das águas pode submergir matéria orgânica e aumentar a demanda microbiana por oxigênio. A reaeração e a fotossíntese podem repor oxigênio.
+- O **índice de oxigênio** entra no cálculo da sobrevivência de peixes e de alguns invertebrados aquáticos. Os nutrientes podem modificar a capacidade de suporte potencial de produtores aquáticos.
+- O alerta **risco elevado de condições semelhantes à dequada** é acionado apenas quando os índices ecológicos e o pulso satisfazem condições didáticas específicas; **não** é diagnóstico, previsão ou classificação regulatória.
+- A mudança do estoque de um nó para o estoque de detritos não corresponde a um balanço de massa físico. Não se misturam contagens de algas, bactérias, peixes e plantas nem se convertem unidades amostrais automaticamente em kg.
+- Os fluxos de matéria orgânica, decomposição, oxigênio e CO₂ **não são calibrados** com observações; o modelo não calcula pH, OD em mg/L, CO₂ livre em mg/L, CH₄, estratificação, transporte, respiração individual por espécie ou toxicidade.
+
+**Fontes científicas de referência:** Calheiros e Ferreira (1996), [Alterações limnológicas no Rio Paraguai ("dequada")](https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/792189); Oliveira, Calheiros e Padovani (2013), [Mapeamento e descrição das áreas de ocorrência dos eventos de decoada no Pantanal](https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/958791).
+
+**Testes reproduzíveis:** `node tests/biogeo.test.js` e `node tests/pulso.test.js`.
+
 ## Limitações científicas
-A simulação é conceitual e não foi calibrada com observações de campo. A etiqueta "elementos biológicos" não é riqueza de espécies quando se incluem grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As simulações dinâmicas representam principalmente ligações diretas de consumo; decomposição, parasitismo, polinização e relações indiretas podem ser desenhadas, mas não são modeladas como processos demográficos específicos.
+A simulação continua conceitual e não foi calibrada com observações de campo. A etiqueta "elementos biológicos" não é riqueza de espécies quando se incluem grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As simulações dinâmicas representam principalmente ligações diretas de consumo; decomposição, parasitismo, polinização e relações indiretas podem ser desenhadas, mas não são modeladas como processos demográficos específicos.
 
 ## Privacidade
 Os dados ficam no próprio navegador (localStorage), sem servidor, login ou compartilhamento automático. Exporte seu JSON para fazer cópias.
