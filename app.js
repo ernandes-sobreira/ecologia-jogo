@@ -146,7 +146,7 @@ function bioOptions(){return {
  load:Number($('bioLoad')?.value||0),
  microbes:Number($('bioMicrobes')?.value||0),
  aeration:Number($('bioAeration')?.value||0),
- temperature:Number($('bioTemperature')?.value||0)
+ temperature:Number($('bioTemperature')?.value||0),edges:graph.edges
 }}
 function renderBio(){
  if(!$('bioChart'))return;
@@ -191,7 +191,7 @@ function renderBio(){
     '<div class="bio-flow"><span>Entrada orgânica: +'+fmt(report.inputs)+'</span><span>Decomposição: '+fmt(report.decomposed)+'</span>'+
     '<span>Demanda de O₂: '+fmt(report.respiration)+'</span><span>Reaeração: +'+fmt(report.reaeration)+'</span>'+
     '<span>Fotossíntese (potencial): +'+fmt(report.photosynthesis)+'</span><span>Absorção de nutrientes: '+fmt(report.uptake)+'</span></div>'+
-    '<p class="bio-small">Elementos decompositores/biofilmes na teia: <b>'+orgs+'</b>. As ligações e os índices de organismos não são transformados diretamente em fluxos medidos.</p>';
+    '<p class="bio-small">Elementos decompositores/biofilmes na teia: <b>'+orgs+'</b> · Ligações diretas serapilheira → decompositor: <b>'+(report.decompositionLinks||0)+'</b>. Seus pesos são didáticos e não representam fluxos de campo.</p>';
   }else{
     processes.innerHTML='<strong>Como os processos funcionam</strong><p>Matéria orgânica submersa → decomposição microbiana → nutrientes e CO₂ relativos; a decomposição pode consumir oxigênio, enquanto fotossíntese e reaeração podem repô-lo.</p><p class="bio-small">Elementos decompositores/biofilmes na teia: <b>'+orgs+'</b>.</p>';
   }
