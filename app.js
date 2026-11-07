@@ -22,10 +22,16 @@ for(const n of graph.nodes){
 }
 let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[],bioState=null,bioReport=null,lastInteractions=null,auditSnapshot=null,sensitivityReport=null,sensitivitySignature=null;
 const persist=()=>{try{localStorage.setItem(store,JSON.stringify(graph))}catch(e){}};
+const missionKey='teia-missoes-pantanal-v1',missionBackupKey='teia-missoes-teia-original-v1';
+let missionProgress=window.TeiaMissions.normalizeProgress((()=>{try{return JSON.parse(localStorage.getItem(missionKey))}catch(e){return null}})());
+let missionFeedbackText=null;
+const persistMission=()=>{try{localStorage.setItem(missionKey,JSON.stringify(missionProgress))}catch(e){}};
+const missionBackupExists=()=>{try{return !!localStorage.getItem(missionBackupKey)}catch(e){return false}};
+
 let toastTimer;function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600)}
 function nodeById(id){return graph.nodes.find(n=>n.id===id)}function spec(id){return base.find(s=>s.id===id)}function edgeId(){return 'e'+Date.now()+Math.random().toString(36).slice(2,7)}
 function selectedSpec(){return spec(preset)}
-function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(()=>{drawEdges();renderFlood()});if(view==='simulacoes')requestAnimationFrame(()=>{drawChart();renderFlood();renderBio()});if(view==='auditoria')renderAudit();if(view==='validacao')renderEvidence();window.scrollTo({top:0,behavior:'instant'})}
+function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(()=>{drawEdges();renderFlood()});if(view==='simulacoes')requestAnimationFrame(()=>{drawChart();renderFlood();renderBio()});if(view==='auditoria')renderAudit();if(view==='validacao')renderEvidence();if(view==='missoes')renderMissions();window.scrollTo({top:0,behavior:'instant'})}
 function roleCss(role){return /^[\wÀ-ÿ ]+$/.test(role)?role:'Outro'}
 function itemTile(s){
  const d=window.TeiaMetrics.forSpec(s);
@@ -608,7 +614,188 @@ function exampleEvidence(){
  selected=null;persist();renderAll();switchView('validacao');
  toast('Exemplo com fontes carregado: veja o grau de apoio e as ressalvas de cada relação.');
 }
-function renderAll(){renderStats();renderEcoDiagnostic();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio();renderInteractions();renderAudit();renderEvidence()}
+
+function missionActive(){
+ const M=window.TeiaMissions,stored=missionProgress.active;
+ if(M.byId[stored]&&M.unlocked(stored,missionProgress))return stored;
+ return M.MISSIONS[0].id;
+}
+function missionContext(){
+ const auditor=window.TeiaAudit?.analyze(graph.nodes,graph.edges,base,{
+   metrics:window.TeiaMetrics,interactions:window.TeiaInteractions});
+ const evidence=window.TeiaEvidence?.assess(graph.nodes,graph.edges,base);
+ return {graph,catalog:base,step:simStep,hydro:pulseAt(simStep),bio:bioState,
+   pulseEnabled:!!$('pulseEnabled').checked,bioEnabled:!!$('bioEnabled').checked,
+   audit:auditor,evidence};
+}
+function renderMissions(){
+ const M=window.TeiaMissions;if(!M||!$('missionCards'))return;
+ const active=missionActive(),mission=M.byId[active];
+ const total=missionProgress.completed.length;
+ $('missionCompletedCount').textContent=total+' / '+M.MISSIONS.length;
+ $('missionProgressFill').style.width=Math.round(total/M.MISSIONS.length*100)+'%';
+ $('missionCards').innerHTML=M.MISSIONS.map(m=>{
+  const done=missionProgress.completed.includes(m.id);
+  const unlocked=M.unlocked(m.id,missionProgress);
+  const pic=base.find(s=>s.slug===m.visuals[0])?.image||'';
+  const state=done?'Concluída':unlocked?'Disponível':'Bloqueada';
+  return '<button type="button" data-mission-select="'+m.id+'" class="mission-card'+
+   (active===m.id?' active':'')+(done?' completed':'')+'" '+(!unlocked?'disabled':'')+'>'+
+   '<span class="mission-card-num">'+m.number+'</span><img src="'+pic+'" alt="" loading="lazy">'+
+   '<strong>'+esc(m.title)+'</strong><span>'+esc(m.tag)+'</span>'+
+   '<small>'+state+'</small></button>';
+ }).join('');
+ const result=M.evaluate(active,missionContext(),missionProgress.answers[active]);
+ $('missionNumber').textContent='MISSÃO '+mission.number+' DE '+M.MISSIONS.length;
+ $('missionTitle').textContent=mission.title;
+ $('missionStory').textContent=mission.story;
+ $('missionTask').textContent=mission.task;
+ $('missionObjectiveCount').textContent=result.passed+' / '+result.total+' objetivos';
+ $('missionObjectives').innerHTML=result.objectives.map((o,i)=>
+  '<div class="mission-goal'+(o.ok?' met':'')+'"><span class="mission-goal-icon">'+
+  (o.ok?'✓':String(i+1))+'</span><div><strong>'+esc(o.label)+'</strong>'+
+  (!o.ok?'<small>'+esc(o.detail)+'</small>':'<small>Objetivo observado na teia.</small>')+
+  '</div></div>').join('');
+ $('missionQuestionText').textContent=mission.question;
+ $('missionChoices').innerHTML=mission.options.map(option=>
+  '<button type="button" class="mission-choice'+
+  (missionProgress.answers[active]===option.id?' selected':'')+
+  '" data-mission-choice="'+esc(option.id)+'" aria-pressed="'+
+  (missionProgress.answers[active]===option.id?'true':'false')+'">'+
+  esc(option.text)+'</button>').join('');
+ const choiceExplanation=$('missionChoiceExplanation');
+ choiceExplanation.textContent=result.choice?
+  (result.choiceCorrect?'✓ ':'Ainda não: ')+result.choiceExplanation:'Selecione uma alternativa para testar sua interpretação.';
+ choiceExplanation.dataset.correct=result.choice?(result.choiceCorrect?'true':'false'):'unset';
+ $('missionHintText').textContent=mission.hint;
+ $('missionScene').dataset.mission=active;
+ const stage=active==='cheia'&&pulseAt(simStep)?.enabled?
+   'Cheia: '+Math.round((pulseAt(simStep)?.connectivity||0)*100)+'/100 de conectividade':
+   active==='dequada'&&bioState?'Oxigênio relativo: '+fmt(bioState.oxygen)+'/100':mission.tag;
+ $('missionScene').innerHTML=mission.visuals.map(slug=>{
+  const sp=base.find(s=>s.slug===slug);
+  return sp?'<div class="mission-scene-asset"><img src="'+sp.image+'" alt="'+esc(sp.name)+'" loading="lazy"><small>'+esc(sp.name)+'</small></div>':'';
+ }).join('')+'<span class="mission-scene-status">'+esc(stage)+'</span>';
+ const isDone=missionProgress.completed.includes(active);
+ const started=missionProgress.started.includes(active);
+ $('missionCheck').disabled=!started;
+ $('missionPrepare').textContent=started?'↻ Reiniciar cenário':'▶ Preparar cenário';
+ $('missionNext').hidden=!isDone||!M.next(active);
+ $('missionRestore').hidden=!missionBackupExists();
+ const info=$('missionFeedback');
+ if(missionFeedbackText?.id===active){
+   info.dataset.status=missionFeedbackText.success?'complete':'progress';
+   info.textContent=missionFeedbackText.message;
+ }else if(isDone){
+   info.dataset.status='complete';
+   info.textContent='Missão concluída! O progresso foi salvo neste navegador. Você pode repetir o desafio ou avançar.';
+ }else if(!started){
+   info.dataset.status='intro';
+   info.textContent='Prepare o cenário da missão ou use sua teia atual. Nenhuma teia será substituída sem sua confirmação.';
+ }else{
+   info.dataset.status='intro';
+   info.textContent='Acompanhe os objetivos, construa ou simule e confira sua explicação. Só a combinação das ações com a interpretação conclui a missão.';
+ }
+ document.querySelectorAll('#missionCards [data-mission-select]').forEach(button=>{
+  button.onclick=()=>selectMission(button.dataset.missionSelect);
+ });
+ document.querySelectorAll('#missionChoices [data-mission-choice]').forEach(button=>{
+  button.onclick=()=>selectMissionAnswer(button.dataset.missionChoice);
+ });
+}
+function selectMission(id){
+ if(!window.TeiaMissions.unlocked(id,missionProgress))return toast('Conclua primeiro a missão anterior.');
+ missionProgress.active=id;persistMission();
+ missionFeedbackText=null;renderMissions();
+ $('missionWorkspace').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function selectMissionAnswer(value){
+ const id=missionActive(),mission=window.TeiaMissions.byId[id];
+ if(!mission.options.some(opt=>opt.id===value))return;
+ missionProgress.answers[id]=value;missionFeedbackText=null;
+ persistMission();renderMissions();
+}
+function startMissionWithCurrent(){
+ const id=missionActive();
+ if(!missionProgress.started.includes(id))missionProgress.started.push(id);
+ missionProgress.active=id;persistMission();
+ missionFeedbackText={id,success:false,
+  message:'Sua teia atual está em uso. Continue construindo, simulando ou analisando os critérios desta missão.'};
+ renderMissions();
+}
+function prepareMission(){
+ const id=missionActive(),M=window.TeiaMissions;
+ if(graph.nodes.length&&!confirm('Preparar o cenário da missão vai substituir a teia ativa. Uma cópia da primeira teia anterior será guardada para restaurar. Continuar?'))return;
+ // Preserve the first nonempty pre-mission graph even across multiple challenges.
+ if(!missionBackupExists()&&graph.nodes.length){
+  try{localStorage.setItem(missionBackupKey,JSON.stringify(graph))}catch(e){
+   toast('Não foi possível preservar sua teia. Exporte o JSON antes de iniciar.');
+   return;
+  }
+ }
+ stopTimer();cancelSimulation();
+ const built=M.buildPreset(id,base);
+ graph={nodes:built.nodes.map(n=>window.TeiaMetrics.enrichNode(n,spec(n.specId))),
+   edges:built.edges};
+ selected=null;firstNode=null;closeEdge();
+ // Reproducible starting conditions, without overwriting the main graph's settings permanently.
+ $('scenario').value='equilibrio';
+ $('pulseEnabled').checked=true;$('pulseStart').value='enchente';$('pulseAmplitude').value='100';
+ $('bioEnabled').checked=true;$('bioLoad').value=id==='dequada'?'100':'45';
+ $('bioMicrobes').value=id==='dequada'?'150':'100';
+ $('bioAeration').value=id==='dequada'?'5':'55';
+ $('bioTemperature').value=id==='dequada'?'90':'50';
+ $('reproFactor').value='1';$('capacityFactor').value='1';$('predationFactor').value='1';
+ $('competitionFactor').value='.5';$('lagSteps').value='2';
+ if(!missionProgress.started.includes(id))missionProgress.started.push(id);
+ missionProgress.active=id;persistMission();persist();
+ missionFeedbackText={id,success:false,
+  message:id==='dequada'?'Experimento preparado com carga orgânica elevada e pouca reaeração. Abra Simulações e acompanhe o oxigênio.':
+    'Cenário preparado. Agora investigue, faça as ligações solicitadas e escolha sua explicação.'};
+ renderAll();switchView('missoes');
+}
+function checkMission(){
+ const id=missionActive(),M=window.TeiaMissions;
+ if(!missionProgress.started.includes(id)){
+  missionFeedbackText={id,success:false,
+   message:'Comece preparando o cenário ou usando sua própria teia. Depois faça o desafio.'};
+  renderMissions();return;
+ }
+ const result=M.evaluate(id,missionContext(),missionProgress.answers[id]);
+ if(result.complete){
+  if(!missionProgress.completed.includes(id))missionProgress.completed.push(id);
+  persistMission();
+  missionFeedbackText={id,success:true,message:'Missão concluída! Todos os objetivos foram observados e sua interpretação corresponde ao cenário. Próximo desafio desbloqueado.'};
+  toast('✓ Missão '+M.byId[id].number+' concluída!');
+ }else{
+  const missing=result.objectives.filter(o=>!o.ok);
+  const first=missing[0];
+  const reason=first?first.detail:!result.choice?'Escolha uma explicação para esta situação.':
+    !result.choiceCorrect?result.choiceExplanation:'Revise os objetivos.';
+  missionFeedbackText={id,success:false,
+   message:'Ainda não concluída: '+reason+' ('+result.passed+'/'+result.total+' objetivos observados).'};
+ }
+ renderMissions();
+}
+function nextMission(){
+ const next=window.TeiaMissions.next(missionActive());
+ if(next&&window.TeiaMissions.unlocked(next,missionProgress))selectMission(next);
+}
+function restoreMissionGraph(){
+ let raw;try{raw=localStorage.getItem(missionBackupKey)}catch(e){raw=null}
+ if(!raw)return toast('Não há teia anterior preservada.');
+ if(!confirm('Restaurar a teia anterior substitui o cenário da missão atual. O progresso das missões será mantido. Continuar?'))return;
+ try{
+  const saved=JSON.parse(raw);
+  if(!Array.isArray(saved.nodes)||!Array.isArray(saved.edges))throw Error('Formato inválido');
+  cancelSimulation();graph={nodes:saved.nodes,edges:saved.edges};
+  selected=null;firstNode=null;closeEdge();persist();
+  localStorage.removeItem(missionBackupKey);
+  missionProgress.active=null;persistMission();missionFeedbackText=null;
+  renderAll();switchView('teia');toast('Sua teia anterior foi restaurada.');
+ }catch(e){toast('Falha ao restaurar a cópia anterior; ela foi preservada.')}
+}
+function renderAll(){renderStats();renderEcoDiagnostic();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio();renderInteractions();renderAudit();renderEvidence();if(current==='missoes')renderMissions()}
 function attachTile(el){let id=el.dataset.spec;el.onclick=()=>{if(el.dataset.justDragged==='1'){el.dataset.justDragged='0';return}selectSpec(spec(id));addNode(spec(id))};el.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='copy'};el.onpointerdown=ev=>{if(ev.pointerType==='mouse')return;const s=spec(id),ghost=document.createElement('div');ghost.className='drag-ghost';ghost.innerHTML='<img src="'+s.image+'"><b>'+esc(s.name)+'</b>';document.body.appendChild(ghost);function move(e){ghost.style.left=e.clientX+10+'px';ghost.style.top=e.clientY-35+'px';let r=$('board').getBoundingClientRect();$('board').classList.toggle('drop-active',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)}function done(e){const travel=Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY);if(travel>10){el.dataset.justDragged='1';setTimeout(()=>el.dataset.justDragged='0',500)}window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',done);window.removeEventListener('pointercancel',done);ghost.remove();$('board').classList.remove('drop-active');let r=$('board').getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){let c=dropPoint(e);addNode(s,c.x,c.y);switchView('teia')}}move(ev);window.addEventListener('pointermove',move);window.addEventListener('pointerup',done);window.addEventListener('pointercancel',done)}}
 function dropPoint(ev){let r=$('webContent').getBoundingClientRect();return {x:Math.max(.08,Math.min(.92,(ev.clientX-r.left)/r.width)),y:Math.max(.12,Math.min(.88,(ev.clientY-r.top)/r.height))}}
 function exampleNames(){return graph.nodes.map(n=>n.name).join(', ')}
@@ -913,7 +1100,16 @@ function renderMini(){
    '</div></div>';
  }).join('');
 }
-function wire(){$('evidenceRefresh').onclick=()=>{renderEvidence();toast('Relações conferidas com as referências cadastradas.')};$('evidenceExample').onclick=exampleEvidence;$('sensitivityRun').onclick=runSensitivity;$('sensitivityFocus').onchange=()=>{sensitivityReport=null;renderSensitivityResults()};$('sensitivitySteps').onchange=()=>{sensitivityReport=null;renderSensitivityResults()};$('auditRefresh').onclick=()=>{renderAudit();toast('Auditoria recalculada a partir das relações atuais.')};$('auditDownload').onclick=downloadAudit;document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>switchView(b.dataset.nav));document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));$('sidebarToggle').onclick=()=>{const v=$('sidebar').classList.toggle('hidden');document.querySelector('.app').classList.toggle('sidebar-closed',v);setTimeout(drawEdges,70)};$('search').oninput=renderLibrary;let fs=['Todos','Produtor','Consumidores','Decompositor','Detritívoro','Necrófago','Parasita','Polinizador','Espécies','Grupos','Comunidades','Associações','Recurso'];$('filters').innerHTML=fs.map(f=>'<button data-filter="'+f+'" class="'+(filter===f?'active':'')+'">'+(f==='Consumidores'?'Consumidores':f==='Produtor'?'Produtores':f==='Recurso'?'Recursos':f==='Comunidade'?'Comunidades':f==='Polinizador'?'Polinizadores':f==='Detritívoro'?'Detritívoros':f==='Necrófago'?'Necrófagos':f==='Parasita'?'Parasitas':f)+'</button>').join('');$('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(c=>c.classList.toggle('active',c===b));renderLibrary()});$('addPicked').onclick=()=>{const s=selectedSpec();addNode(s);switchView('teia')};$('updatePicked').onclick=()=>{
+function wire(){
+$('missionPrepare').onclick=prepareMission;
+$('missionUseCurrent').onclick=startMissionWithCurrent;
+$('missionCheck').onclick=checkMission;
+$('missionNext').onclick=nextMission;
+$('missionRestore').onclick=restoreMissionGraph;
+$('missionToTeia').onclick=()=>switchView('teia');
+$('missionToSim').onclick=()=>switchView('simulacoes');
+$('missionToAudit').onclick=()=>switchView('auditoria');
+$('evidenceRefresh').onclick=()=>{renderEvidence();toast('Relações conferidas com as referências cadastradas.')};$('evidenceExample').onclick=exampleEvidence;$('sensitivityRun').onclick=runSensitivity;$('sensitivityFocus').onchange=()=>{sensitivityReport=null;renderSensitivityResults()};$('sensitivitySteps').onchange=()=>{sensitivityReport=null;renderSensitivityResults()};$('auditRefresh').onclick=()=>{renderAudit();toast('Auditoria recalculada a partir das relações atuais.')};$('auditDownload').onclick=downloadAudit;document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>switchView(b.dataset.nav));document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));$('sidebarToggle').onclick=()=>{const v=$('sidebar').classList.toggle('hidden');document.querySelector('.app').classList.toggle('sidebar-closed',v);setTimeout(drawEdges,70)};$('search').oninput=renderLibrary;let fs=['Todos','Produtor','Consumidores','Decompositor','Detritívoro','Necrófago','Parasita','Polinizador','Espécies','Grupos','Comunidades','Associações','Recurso'];$('filters').innerHTML=fs.map(f=>'<button data-filter="'+f+'" class="'+(filter===f?'active':'')+'">'+(f==='Consumidores'?'Consumidores':f==='Produtor'?'Produtores':f==='Recurso'?'Recursos':f==='Comunidade'?'Comunidades':f==='Polinizador'?'Polinizadores':f==='Detritívoro'?'Detritívoros':f==='Necrófago'?'Necrófagos':f==='Parasita'?'Parasitas':f)+'</button>').join('');$('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(c=>c.classList.toggle('active',c===b));renderLibrary()});$('addPicked').onclick=()=>{const s=selectedSpec();addNode(s);switchView('teia')};$('updatePicked').onclick=()=>{
  const n=selected?nodeById(selected):null;
  if(!n)return toast('Selecione um elemento da teia.');
  cancelSimulation();
