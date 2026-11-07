@@ -10,7 +10,7 @@ Plataforma educacional independente (HTML, CSS e JavaScript, sem bibliotecas ext
 A plataforma não depende do repositório da aula e não possui links de volta a ela.
 
 ## Funcionalidades
-- Catálogo com **44 elementos**: 30 ilustrações WebP originais e 14 ilustrações SVG naturalistas adicionais, todos locais em `assets/organismos/` (sem fotografias externas).
+- Catálogo com **44 elementos**, ilustrações realistas geradas no ChatGPT e disponíveis em arquivos locais transparentes sob `assets/organismos-transparentes/`, com arquivos de reserva.
 - Novos grupos: detritívoros, necrófagos e parasitas; novos exemplos editáveis de teias **aquática** e **terrestre**.
 - Arrastar, soltar, reposicionar, excluir organismos.
 - Criar setas clicando em dois nós; editar direção, cor, peso e relação direta/indireta; excluir setas.
@@ -97,8 +97,29 @@ Use o botão **Interações ecológicas** no painel ou **Interações** na teia 
 
 **Testes reproduzíveis:** `node tests/interacoes.test.js`, `node tests/pulso.test.js` e `node tests/biogeo.test.js`.
 
+## Etapa 5 — identidade taxonômica e indicadores corretamente tipados
+
+**Objetivo:** evitar que organismos, táxons genéricos, comunidades, associações simbióticas e recursos não vivos sejam confundidos com espécies e que contagens de unidades diferentes sejam somadas.
+
+- O catálogo de **44 elementos** passou a ter o arquivo `ecological-metrics.js` com seis tipos: **espécie nomeada**, **táxon sem espécie definida**, **grupo funcional/taxonômico**, **comunidade**, **associação/simbiose** e **recurso não vivo**. O catálogo continua completo, com imagens locais.
+- Exemplos explicitamente especificados a espécie no catálogo: capivara (*Hydrochoerus hydrochaeris*), onça-pintada (*Panthera onca*), tuiuiú (*Jabiru mycteria*), anta (*Tapirus terrestris*), acuri (*Attalea phalerata*), cambará (*Vochysia divergens*) e carandá (*Copernicia alba*). Não presumimos a espécie de “garça”, “jacaré”, “ipê-amarelo”, “lambari”, “sucuri” ou outros nomes comuns genéricos.
+- A **minhoca** agora é apresentada como **detritívora**, não como decompositora microbiana. Fungos e bactérias continuam decompositores. Perifíton, biofilme, fitoplâncton e zooplâncton são comunidades; líquen é associação/simbiose, não uma espécie.
+- **Elementos da teia** são contados separadamente de **espécies nomeadas**. A métrica de espécies nomeadas NÃO mede a riqueza de espécies total (S). O usuário pode informar um binômio científico de um elemento, mas isso é uma **declaração sem validação taxonômica automática**.
+- **Indivíduos ilustrativos** somam somente nós com a unidade “indivíduos”. **Índices didáticos** são valores abstratos do estado de grupos e comunidades; não são número de indivíduos nem número de amostras. Amostras, colônias e outras unidades não entram no total de indivíduos.
+- Quando uma unidade é declarada como **amostras** ou **colônias**, sua quantidade permanece fixa durante a simulação: não sofre reprodução, predação ou crescimento demográfico. Para simular a dinâmica biológica de um conjunto de organismos, selecione **índice didático**.
+- A soma exibida da **biomassa viva informada (kg)** exclui serapilheira, frutos, flores, sementes e néctar, cuja massa é **estoque de recurso**. Biomassas faltantes não viram zeros presumidos e o total é parcial.
+- O gráfico de população agora apresenta **índice relativo (100 = valor inicial)**, e não um eixo absoluto que mistura células, amostras e indivíduos. A tabela exibe unidade e tipo de identidade para cada nó.
+- Em **Propriedades do elemento**, é possível editar **unidade**, **tipo de identidade**, **nome científico declarado** e **base de amostragem**. Os novos campos são acrescentados aos nós sem trocar os seus IDs; a chave `teia-da-vida-pantanal-v3`, as relações e a importação/exportação JSON são mantidas.
+- O **diagnóstico ecológico** no painel mostra as categorias presentes, os nomes científicos informados e avisos sobre limitações dos dados.
+
+**Cuidado científico:** densidade (indivíduos/área ou volume), riqueza total, equitabilidade, índices de diversidade e comparação de biomassa entre estudos necessitam identificação taxonômica e informação sobre área, esforço, método, período e cobertura amostral. O painel não produz esses resultados a partir de números ilustrativos incompatíveis.
+
+**Referências:** Embrapa Pantanal, [Flora e paisagens do Pantanal](https://www.embrapa.br/en/web/pantanal/flora-e-paisagens-do-pantanal); Embrapa, [Plantas do Pantanal](https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/783791/1/PLANTAS-DO-PANTANAL-1994.pdf); GBIF, [Guide for Publishing Biological Survey and Monitoring Data: Sampling Effort](https://docs.gbif.org/guide-publishing-survey-data/en/).
+
+**Teste:** `node tests/metricas.test.js` (44 registros, diversidade taxonômica parcial, unidades, biomassa, compatibilidade com teias salvas e registros amostrais fixos).
+
 ## Limitações científicas
-A simulação continua conceitual e não foi calibrada com observações de campo. A etiqueta "elementos biológicos" não é riqueza de espécies quando se incluem grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As interações diretas agora têm regras didáticas distintas; efeitos indiretos são registrados como caminhos mediados e não acrescentam forças independentes, para evitar duplicidade. Isso não equivale a um modelo demográfico calibrado para espécies do Pantanal.
+A simulação continua conceitual e não foi calibrada com observações de campo. A contagem de elementos não corresponde à riqueza de espécies quando há grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As interações diretas agora têm regras didáticas distintas; efeitos indiretos são registrados como caminhos mediados e não acrescentam forças independentes, para evitar duplicidade. Isso não equivale a um modelo demográfico calibrado para espécies do Pantanal.
 
 ## Privacidade
 Os dados ficam no próprio navegador (localStorage), sem servidor, login ou compartilhamento automático. Exporte seu JSON para fazer cópias.
