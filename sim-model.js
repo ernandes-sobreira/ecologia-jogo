@@ -43,10 +43,17 @@
       lag: Math.round(minmax(finite(raw.lag,2),0,4))
     };
   }
-  function consumptive(edge,nodeById) {
-    if (!edge || edge.kind==='indireta' || edge.nature!=='consumo') return false;
-    const prey=nodeById[edge.a],pred=nodeById[edge.b];
-    return Boolean(prey&&pred&&prey.id!==pred.id&&pred.role!=='Recurso');
+  function foodLink(edge,nodeById) {
+    if (!edge || edge.kind==='indireta' || edge.nature!=='consumo') return null;
+    const first=nodeById[edge.a],second=nodeById[edge.b];
+    if(!first||!second||first.id===second.id)return null;
+    // Quem é consumido é independente do sentido gráfico da seta.
+    const rank=n=>({Recurso:0,Produtor:1,Decompositor:2,Detritívoro:2,Comunidade:2,Consumidor:2,Polinizador:2,Parasita:3,Necrófago:3,Predador:4}[roleOf(n)]??2);
+    const foodId=edge.foodId===first.id||edge.foodId===second.id?edge.foodId:
+      (rank(first)<rank(second)?first.id:rank(second)<rank(first)?second.id:first.id);
+    const consumerId=foodId===first.id?second.id:first.id;
+    if(nodeById[consumerId]?.role==='Recurso')return null;
+    return {...edge,a:foodId,b:consumerId};
   }
   function init(nodes) {
     const initial={},pop={},foodHistory={};
@@ -72,7 +79,7 @@
       if(!initial[n.id])initial[n.id]={count:Math.max(0,finite(n.count)),mass:n.mass==null?null:Math.max(0,finite(n.mass)),role:n.role,name:n.name};
       foodHistory[n.id]=Array.isArray(state.foodHistory[n.id])?[...state.foodHistory[n.id]]:[1];
     }
-    const links=edges.filter(e=>consumptive(e,byId));
+    const links=edges.map(e=>foodLink(e,byId)).filter(Boolean);
     const foodsByConsumer={},consumersByFood={};
     for (const e of links) {
       (foodsByConsumer[e.b] ||= []).push(e);
