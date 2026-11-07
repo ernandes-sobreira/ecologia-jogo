@@ -493,6 +493,15 @@ function renderEvidence(){
  $('evidenceSources').innerHTML=Object.values(window.TeiaEvidence.SOURCES).map(x=>
   '<div class="evidence-source"><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+
   esc(x.title)+'</a><small>'+esc(x.authors)+' · '+esc(x.year)+' · '+esc(x.scope)+'</small></div>').join('');
+ $('evidenceObserved').innerHTML=(window.TeiaEvidence.OBSERVATIONS||[]).map(o=>{
+   const source=window.TeiaEvidence.SOURCES[o.sourceId];
+   return '<article class="observed-card"><strong>'+esc(o.label)+'</strong>'+
+     '<div class="observed-value">'+esc(o.value)+'</div>'+
+     '<small>'+esc(o.unit)+'</small><p>'+esc(o.context)+'</p>'+
+     '<em>'+esc(o.caution)+'</em>'+
+     (source?'<a href="'+esc(source.url)+'" target="_blank" rel="noopener noreferrer">Conferir fonte</a>':'')+
+     '</article>';
+ }).join('');
  $('evidenceParameters').innerHTML=window.TeiaEvidence.PARAMETERS.map(x=>
   '<article class="evidence-param"><strong>'+esc(x.name)+'</strong>'+
   '<span class="param-tag">'+esc(x.status)+'</span>'+
