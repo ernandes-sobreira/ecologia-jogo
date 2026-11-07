@@ -52,6 +52,23 @@ function exampleHabitat(type){
  }
  selected=null;persist();renderAll();switchView('teia');toast('Teia '+(aquatic?'aquática':'terrestre')+' didática carregada');
 }
+function exampleDecomposition(){
+ if(graph.nodes.length&&!confirm('Substituir sua teia pelo exemplo de decomposição? Exporte seu trabalho antes, se desejar.'))return;
+ cancelSimulation();
+ graph={nodes:[],edges:[]};
+ const indices=[0,8,6,35,29,30,31,32,3];
+ indices.forEach((i,k)=>{const n=newNode(base[i],.17+(k%3)*.32,.20+Math.floor(k/3)*.30);n.id='bioDemo'+i;graph.nodes.push(n)});
+ const link=(a,b,w,nature)=>{
+   graph.edges.push({id:edgeId(),a:'bioDemo'+a,b:'bioDemo'+b,weight:w,
+     color:nature==='decomposicao'?'#a47a46':'#248c56',
+     direction:'forward',kind:'direta',nature,
+     ...(nature==='consumo'?{foodId:'bioDemo'+a}:{})});
+ };
+ link(0,8,.45,'outro');link(8,6,.8,'decomposicao');link(8,35,.8,'decomposicao');
+ link(29,30,.7,'consumo');link(30,31,.65,'consumo');link(31,32,.7,'consumo');link(31,3,.35,'consumo');
+ selected=null;persist();renderAll();switchView('simulacoes');
+ toast('Exemplo carregado. Compare o oxigênio com diferentes cargas orgânicas e reaeração.');
+}
 function renderStats(){let real=graph.nodes.filter(n=>n.role!=='Recurso');$('statRich').textContent=real.length;$('statN').textContent=fmt(real.reduce((sum,n)=>sum+n.count,0));const ms=graph.nodes.filter(n=>n.mass!==null&&Number.isFinite(Number(n.mass)));$('statBio').textContent=ms.length?fmt(ms.reduce((sum,n)=>sum+Number(n.mass),0)):'—';$('statEdges').textContent=graph.edges.length}
 function dots(n){if(n.role==='Recurso')return '';let nDots=Math.max(0,Math.min(8,Math.ceil(n.count/Math.max(1,Math.ceil(n.count/8)))));return '<div class="dots" style="--dot:'+(colors[n.role]||'#4d9b64')+'">'+Array.from({length:nDots},()=>'<i></i>').join('')+'</div>'}
 function drawNodes(){$('emptyHint').hidden=graph.nodes.length>0;$('nodesLayer').innerHTML=graph.nodes.map(n=>{let s=spec(n.specId);return '<div class="node'+(selected===n.id?' selected':'')+(firstNode===n.id?' connect-first':'')+'" data-node="'+esc(n.id)+'" tabindex="0" role="button" aria-label="'+esc(n.name)+'"><button class="remove-node" data-delete="'+esc(n.id)+'" aria-label="Excluir '+esc(n.name)+'">×</button><img src="'+(s?.image||'')+'" alt="'+esc(n.name)+'" draggable="false"><b>'+esc(n.name)+'</b><small>'+(n.role==='Recurso'?'Recurso':fmt(n.count)+' unidades')+'</small><small>'+(n.mass===null?'Biomassa não informada':fmt(n.mass)+' kg')+'</small>'+dots(n)+'</div>'}).join('');$('nodesLayer').querySelectorAll('[data-delete]').forEach(el=>{el.onpointerdown=e=>e.stopPropagation();el.onclick=e=>{e.stopPropagation();deleteNode(el.dataset.delete)}});$('nodesLayer').querySelectorAll('[data-node]').forEach(el=>{el.onclick=()=>handleNodeClick(el.dataset.node);el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();handleNodeClick(el.dataset.node)}};el.onpointerdown=e=>{if(e.button!==0||connectMode)return;let n=nodeById(el.dataset.node),dragged=false;if(!n)return;el.setPointerCapture(e.pointerId);el.onpointermove=ev=>{if(!el.hasPointerCapture(ev.pointerId))return;dragged=true;let r=$('webContent').getBoundingClientRect();n.x=Math.max(.07,Math.min(.93,(ev.clientX-r.left)/r.width));n.y=Math.max(.1,Math.min(.9,(ev.clientY-r.top)/r.height));el.style.left=n.x*100+'%';el.style.top=n.y*100+'%';drawEdges()};el.onpointerup=()=>{el.onpointermove=null;if(dragged)persist()};el.onpointercancel=()=>{el.onpointermove=null}};let n=nodeById(el.dataset.node);el.style.left=n.x*100+'%';el.style.top=n.y*100+'%'})}
@@ -175,7 +192,7 @@ function renderBio(){
  ];
  let chart='<path d="M42 10V145H640" stroke="#c8d8d1" stroke-width="1.4" fill="none"/>';
  for(let i=0;i<=4;i++){const v=i*25,y=145-v*1.25;chart+='<path d="M42 '+y+'H640" stroke="#edf1eb" stroke-width="1"/><text x="37" y="'+(y+4)+'" font-size="11" fill="#7b8e80" text-anchor="end">'+v+'</text>'}
- for(let i=0;i<=3;i++){const x=42+i*10*14.2;chart+='<text x="'+x+'" y="163" text-anchor="middle" font-size="11" fill="#7b8e80">'+i*20+'</text>'}
+ for(let i=0;i<=3;i++){const x=42+i*20*598/60;chart+='<text x="'+x+'" y="163" text-anchor="middle" font-size="11" fill="#7b8e80">'+i*20+'</text>'}
  for(const serie of series){
    const d=hist.map((v,i)=>(i?'L':'M')+(42+Math.min(60,v.step)*598/60).toFixed(1)+' '+(145-Math.max(0,Math.min(100,v[serie.field]))*1.25).toFixed(1)).join(' ');
    chart+='<path d="'+d+'" fill="none" stroke="'+serie.color+'" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
@@ -306,6 +323,7 @@ for(const id of ['bioEnabled','bioLoad','bioMicrobes','bioAeration','bioTemperat
  if(el)el.onchange=resetSim;
  if(el&&id!=='bioEnabled')el.oninput=renderBio;
 }
+$('exampleDecomposition').onclick=exampleDecomposition;
 $('bioExperiment').onclick=()=>{
  $('bioEnabled').checked=true;
  $('pulseEnabled').checked=true;
