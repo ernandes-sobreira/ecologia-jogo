@@ -116,7 +116,9 @@
    objectives=[
     obj('Lambari com recursos alimentares',!!consumer&&!!loc('zooplancton')&&!!loc('larvas-insetos-aquaticos'),
       'Inclua lambari, zooplâncton e larvas de insetos aquáticos.'),
-    obj('Duas fontes distintas ligadas ao lambari',foods.size>=2,
+    obj('Duas fontes distintas ligadas ao lambari',
+      !!loc('zooplancton')&&!!loc('larvas-insetos-aquaticos')&&
+      foods.has(loc('zooplancton'))&&foods.has(loc('larvas-insetos-aquaticos')),
       'Crie ligações diretas de consumo com duas fontes diferentes e identifique cada alimento.'),
     obj('Populações observadas no simulador',step>=6,
       'Execute pelo menos seis passos para observar como a comunidade responde.')
