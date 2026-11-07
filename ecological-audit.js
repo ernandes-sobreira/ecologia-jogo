@@ -260,6 +260,14 @@
    active.delete(id);
   }
   const visited=new Set();for(const n of living)detectCycle(n.id,visited,new Set());
+  const cyclicLevels=new Set([...cycleSeen,...cycles]);
+  // A closed cycle has no uniquely determined level from its own prey average.
+  // Never show a precise numeric level for a compartment involved in a detected cycle.
+  for(const item of levels){
+   if(!cyclicLevels.has(item.id))continue;
+   item.level=null;item.partial=true;item.status='ciclo: não estimado';
+   unknown.add(item.id);
+  }
   if(cycleSeen.size||cycles.size){
    add('revisar','trophic-cycle','Circuito alimentar que exige interpretação',
     'Um ou mais consumidores têm uma cadeia circular de relações alimentares. Canibalismo ou predação recíproca podem ocorrer; a posição trófica não é estimada com segurança para esses caminhos.',
