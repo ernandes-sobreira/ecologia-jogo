@@ -17,6 +17,13 @@ const catalog=[['s0','capim'],['s1','capivara'],['s2','onca-pintada'],
 const link=(a,b,nature,extra={})=>({id:'edge-'+a+'-'+b,a,b,nature,kind:'direta',weight:.7,...extra});
 assert.ok(Object.keys(evidence.SOURCES).length>=8);
 assert.ok(evidence.PARAMETERS.length>=6);
+assert.ok(evidence.OBSERVATIONS.length>=5,'Fichas empíricas com unidades e fontes');
+for(const o of evidence.OBSERVATIONS){
+ assert.ok(evidence.SOURCES[o.sourceId],'Fonte ausente para observação');
+ assert.ok(o.value&&o.unit&&o.context&&o.caution);
+}
+assert.ok(evidence.OBSERVATIONS.some(o=>o.id==='dequada'&&o.value.includes('mg/L')));
+assert.ok(evidence.OBSERVATIONS.some(o=>o.id==='phyto-density'&&o.value.includes('ind./mL')));
 for(const source of Object.values(evidence.SOURCES)){
  assert.ok(/^https:\/\//.test(source.url),'Fonte sem URL HTTPS');
  assert.ok(source.title&&source.year);
