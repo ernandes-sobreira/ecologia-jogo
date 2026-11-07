@@ -333,3 +333,14 @@
  .sensitivity-row>span:nth-child(4),.sensitivity-row>span:nth-child(5),
  .sensitivity-head>span:nth-child(4),.sensitivity-head>span:nth-child(5){display:block}
 }
+
+/* Observações bibliográficas: manter unidades e contextos visíveis. */
+.evidence-observed{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:9px}
+.observed-card{padding:13px;border:1px solid #dce9e0;background:#fbfdfb;border-radius:11px;min-width:0}
+.observed-card strong{font-size:12px;color:#275d41;display:block;line-height:1.35}
+.observed-value{font-size:16px;font-weight:800;color:#205d46;line-height:1.35;margin:8px 0 4px}
+.observed-card small{display:block;color:#678473;font-size:10px;line-height:1.45}
+.observed-card p{font-size:11px;color:#627b69;line-height:1.5;margin:8px 0}
+.observed-card em{font-size:11px;font-style:normal;color:#875d31;line-height:1.5;display:block;
+ background:#fff8ec;padding:7px 8px;border-radius:7px}
+.observed-card a{display:inline-block;margin-top:9px;color:#26764d;text-decoration:underline;font-size:11px}
