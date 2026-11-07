@@ -89,7 +89,13 @@
       foodHistory[n.id]=Array.isArray(state.foodHistory[n.id])?[...state.foodHistory[n.id]]:[1];
       popHistory[n.id]=Array.isArray(state.popHistory?.[n.id])?[...state.popHistory[n.id]]:[old[n.id]];
     }
-    const links=Array.isArray(ecological?.trophicLinks)?ecological.trophicLinks:edges.map(e=>foodLink(e,byId)).filter(Boolean);
+    const recordedUnit=n=>['amostras','colonias'].includes(n?.countUnit);
+    // No biological recruitment can change a count of samples or colonies
+    // recorded by the observer. Such observations also do not exert trophic
+    // pressure as if they were numbers of organisms.
+    const links=(Array.isArray(ecological?.trophicLinks)?
+      ecological.trophicLinks:edges.map(e=>foodLink(e,byId)).filter(Boolean))
+      .filter(e=>!recordedUnit(byId[e.a])&&!recordedUnit(byId[e.b]));
     const foodsByConsumer={},consumersByFood={};
     for (const e of links) {
       (foodsByConsumer[e.b] ||= []).push(e);
@@ -155,6 +161,17 @@
       const id=n.id, N=old[id],role=roleOf(n),rated=RATE[role]||RATE.Outro;
       const eco=effects[id]||{};
       if(role==='Recurso'){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Recurso sem contagem de indivíduos: não simulado nesta etapa.',capacity:null,food:null,laggedFood:null,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:null,herbivory:0,explicitCompetition:0,parasitism:0,mutualism:0,pollination:0,dispersal:0});continue;}
+      if(recordedUnit(n)){
+        // A sample or colony RECORD is not a model population.
+        next[id]=N;
+        reports.push({id,name:n.name,role,before:N,after:N,change:0,
+          reason:'Registro amostral/colônia mantido fixo; escolha índice didático para simular dinâmica biológica.',
+          capacity:null,food:null,laggedFood:null,births:0,natural:0,density:0,starvation:0,
+          competition:0,explicitCompetition:0,predation:0,herbivory:0,parasitism:0,
+          mutualism:0,pollination:0,dispersal:0,partnerBenefit:0,bioticGains:0,
+          waterQuality:0,climate:0,hydrology:0,interactionCauses:[],indirectPaths:[]});
+        continue;
+      }
       const f=currentFood[id],hist=foodHistory[id];
       const idx=Math.max(0,hist.length-1-opts.lag);
       const lagged=opts.lag===0?f:hist[idx];
