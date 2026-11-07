@@ -195,6 +195,33 @@ As classificações “resposta forte/moderada/pequena” usam cortes visuais e 
 
 **Testes reproduzíveis:** `node tests/evidencias.test.js`, `node tests/sensibilidade.test.js`, além de `node tests/auditoria.test.js`, `node tests/metricas.test.js`, `node tests/interacoes.test.js`, `node tests/pulso.test.js` e `node tests/biogeo.test.js`.
 
+## Etapa 8 — Missões Ecológicas: jogar, investigar e explicar
+
+O `game-missions.js` acrescenta a aba **Missões**, sem remover **Teia da Vida**, **Simulações**, **Auditoria** nem **Ciência**. Há cinco desafios progressivos, que exigem **ações observáveis no laboratório + escolha de uma explicação ecológica fundamentada**. Não há classificação de validade universal, contagem competitiva de “acertos” por tentativa ou pontos artificiais baseados na quantidade de setas.
+
+| Missão | Prática | Critério verificável |
+|---|---|---|
+| **1 — Quem alimenta quem?** | Criar capim → capivara por herbivoria; capivara → onça por consumo | Três nós, duas ligações diretas com alimento explicitamente informado, escolha correta sobre fluxo de energia |
+| **2 — Uma teia com alternativas** | Acrescentar um segundo recurso alimentar para lambari (zooplâncton e larvas de insetos aquáticos no cenário) | Duas fontes identificadas, pelo menos 6 passos simulados, interpretação condicional da disponibilidade alimentar |
+| **3 — A enchente chegou!** | Usar o pulso de inundação e observar a conectividade | Fitoplâncton e lambari presentes, pulso ativado, fase **Cheia** observada a partir do passo 15, interpretação adequada |
+| **4 — A lagoa está sem ar** | Investigar a decomposição de serapilheira, carga orgânica e reaeração | Decompositor conectado a detritos, módulos ativos, pelo menos 8 passos e queda do índice relativo de O₂ abaixo de 40/100, explicação causal |
+| **5 — Torne-se um ecólogo** | Corrigir uma relação de decomposição intencionalmente incoerente, verificar a teia e a bibliografia | Cadeia preservada, nenhuma relação estruturalmente inválida, evidência regional de onça–capivara distinguida de parâmetros hipotéticos, justificativa correta |
+
+### Como jogar
+
+1. Abra **Missões**, selecione a missão desbloqueada e clique em **Preparar cenário**. Caso já exista uma teia, o jogo **solicita confirmação** antes de substituí-la e armazena uma cópia restaurável da teia anterior neste navegador.
+2. Opcionalmente, use **Usar minha teia atual** para trabalhar diretamente sobre a rede desenhada, sem substituição.
+3. Navegue pelos atalhos **Construir/editar teia**, **Executar simulação** ou **Consultar auditoria**, realize os objetivos e retorne à aba Missões.
+4. Escolha uma interpretação. A resposta gera uma explicação mesmo quando está incorreta. Clique em **Conferir missão**: a conclusão só ocorre se todos os objetivos e a interpretação estiverem atendidos.
+5. A próxima missão será desbloqueada. Um indicador 0/5 → 5/5 mostra o avanço. O progresso e as respostas ficam em `localStorage`, sob `teia-missoes-pantanal-v1`, **separados** da teia original `teia-da-vida-pantanal-v3`.
+6. O botão **Restaurar minha teia anterior** recupera a cópia original preservada. Essa recuperação altera somente o cenário ativo e **não apaga a progressão**. O usuário também pode exportar a teia em JSON para backup independente.
+
+O cenário da missão **não dá conclusão automática**: os objetivos exigem ligações, simulações ou correções conforme o desafio. A opção adequada não ocupa sempre a mesma posição nas perguntas, e **erros são oportunidades de investigação**, sem punição irreversível. O editor agora apresenta um item de seleção explícita para *alimento/presa*: não infere silenciosamente o campo para contabilizar uma missão.
+
+**Limites científicos:** uma condição satisfeita não significa que a relação tenha ocorrido no Pantanal com aquela intensidade. “Lambari”, “abelha” e outros nomes genéricos não correspondem necessariamente a uma espécie única. As populações, o pulso, o oxigênio e as taxas continuam hipotéticos, com unidades didáticas; desafios promovem explicação e comparação, não validação preditiva de campo.
+
+**Testes reproduzíveis:** `node tests/missoes.test.js` e os sete testes anteriores. A bateria verifica construção de cenários, objetivos, raciocínio, avanço, dequada, auditoria, bloqueios e dados preservados.
+
 ## Limitações científicas
 A simulação continua conceitual e não foi calibrada com observações de campo. A contagem de elementos não corresponde à riqueza de espécies quando há grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As interações diretas agora têm regras didáticas distintas; efeitos indiretos são registrados como caminhos mediados e não acrescentam forças independentes, para evitar duplicidade. Isso não equivale a um modelo demográfico calibrado para espécies do Pantanal.
 
