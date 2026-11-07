@@ -102,6 +102,11 @@
       const a=by[e.a],b=by[e.b];if(!a||!b||a.id===b.id)continue;
       const nature=normalizeNature(e.nature),w=cap(e.weight??.6,.1,1);
       if(e.kind==='indireta'){ignored.push(e);continue}
+      if(['amostras','colonias'].includes(a.countUnit)||['amostras','colonias'].includes(b.countUnit)){
+        warnings.push({id:e.id||'',pair:a.name+' — '+b.name,
+          text:'Registro de amostras/colônias: a ligação é visual e não entra na dinâmica de organismos; use índice didático ou indivíduos.'});
+        continue;
+      }
       const check=validate(nodes,e);
       if(!check.valid){warnings.push({id:e.id||'',text:check.reason,pair:a.name+' — '+b.name});continue}
       active.push({id:e.id||'',nature,from:a.id,to:b.id,weight:w});
