@@ -23,9 +23,38 @@ function nodeById(id){return graph.nodes.find(n=>n.id===id)}function spec(id){re
 function selectedSpec(){return spec(preset)}
 function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(()=>{drawEdges();renderFlood()});if(view==='simulacoes')requestAnimationFrame(()=>{drawChart();renderFlood();renderBio()});window.scrollTo({top:0,behavior:'instant'})}
 function roleCss(role){return /^[\wÀ-ÿ ]+$/.test(role)?role:'Outro'}
-function itemTile(s){return '<button class="tile'+(s.id===preset?' selected':'')+'" data-spec="'+esc(s.id)+'" draggable="true" title="'+esc(s.name)+'"><img src="'+s.image+'" alt="Ilustração de '+esc(s.name)+'" draggable="false"><b>'+esc(s.name)+'</b><span class="role-tag '+roleCss(s.role)+'">'+esc(s.role)+'</span></button>'}
-function renderLibrary(){let q=$('search').value.trim().toLocaleLowerCase('pt-BR');let visible=base.filter(s=>(filter==='Todos'||s.role===filter||(filter==='Consumidores'&&['Consumidor','Predador','Detritívoro','Necrófago','Parasita'].includes(s.role)))&&s.name.toLocaleLowerCase('pt-BR').includes(q));$('library').innerHTML=visible.map(itemTile).join('');$('library').querySelectorAll('.tile').forEach(el=>attachTile(el));}
-function renderCatalog(){ $('catalogGrid').innerHTML=base.map(s=>'<article class="catalog-card"><img src="'+s.image+'" alt="Ilustração de '+esc(s.name)+'"><b>'+esc(s.name)+'</b><span class="role-tag '+roleCss(s.role)+'">'+esc(s.role)+'</span><p>'+esc(s.note)+'</p><button data-addcat="'+s.id+'">Adicionar à teia</button></article>').join('');$('catalogGrid').querySelectorAll('[data-addcat]').forEach(b=>b.onclick=()=>{const s=spec(b.dataset.addcat);addNode(s,.2+Math.random()*.6,.22+Math.random()*.55);switchView('teia')})}
+function itemTile(s){
+ const d=window.TeiaMetrics.forSpec(s);
+ const kindShort={especie:'Espécie',taxon:'Táxon',grupo:'Grupo',comunidade:'Comunidade',
+  associacao:'Associação',recurso:'Recurso'};
+ return '<button class="tile'+(s.id===preset?' selected':'')+'" data-spec="'+esc(s.id)+
+ '" draggable="true" title="'+esc(s.name)+' — '+esc(window.TeiaMetrics.TYPES[d.kind])+'"><img src="'+s.image+
+ '" alt="Ilustração de '+esc(s.name)+'" draggable="false"><b>'+esc(s.name)+
+ '</b><span class="role-tag '+roleCss(s.role)+'">'+esc(s.role)+'</span>'+
+ '<span class="eco-kind-badge">'+kindShort[d.kind]+'</span></button>';
+}
+function renderLibrary(){
+ let q=$('search').value.trim().toLocaleLowerCase('pt-BR');
+ let visible=base.filter(s=>(filter==='Todos'||s.role===filter||
+ (filter==='Consumidores'&&['Consumidor','Predador','Detritívoro','Necrófago','Parasita'].includes(s.role)))&&
+ (s.name.toLocaleLowerCase('pt-BR').includes(q)||window.TeiaMetrics.forSpec(s).scientificName.toLocaleLowerCase('pt-BR').includes(q)));
+ $('library').innerHTML=visible.map(itemTile).join('');
+ $('library').querySelectorAll('.tile').forEach(el=>attachTile(el));
+}
+function renderCatalog(){
+ $('catalogGrid').innerHTML=base.map(s=>{
+  const meta=window.TeiaMetrics.forSpec(s),type=window.TeiaMetrics.TYPES[meta.kind];
+  const sc=meta.scientificName?'<p class="catalog-scientific"><i>'+esc(meta.scientificName)+'</i></p>':'';
+  return '<article class="catalog-card"><img src="'+s.image+'" alt="Ilustração de '+esc(s.name)+'"><b>'+esc(s.name)+
+  '</b><span class="role-tag '+roleCss(s.role)+'">'+esc(s.role)+'</span>'+
+  '<div class="eco-type-label">'+esc(type)+'</div>'+sc+
+  '<p>'+esc(meta.ecology)+'</p><small class="eco-unit-label">Unidade inicial: '+esc(window.TeiaMetrics.UNITS[meta.unit])+
+  '</small><button data-addcat="'+s.id+'">Adicionar à teia</button></article>';
+ }).join('');
+ $('catalogGrid').querySelectorAll('[data-addcat]').forEach(b=>b.onclick=()=>{
+  const s=spec(b.dataset.addcat);addNode(s,.2+Math.random()*.6,.22+Math.random()*.55);switchView('teia');
+ });
+}
 function selectSpec(s){if(!s)return;preset=s.id;selected=graph.nodes.find(n=>n.specId===s.id)?.id||null;populateControls();renderLibrary()}
 function selectNode(id){const n=nodeById(id);if(!n)return;selected=n.id;preset=n.specId;populateControls();renderLibrary();drawNodes()}
 function identityOf(n,s){return window.TeiaMetrics.resolve(n||{},s||spec(n?.specId)||{})}
@@ -149,8 +178,58 @@ function renderEcoDiagnostic(){
   stats.issues.map(msg=>'<li>'+esc(msg)+'</li>').join('')+'</ul>':'';
 }
 
-function dots(n){if(n.role==='Recurso')return '';let nDots=Math.max(0,Math.min(8,Math.ceil(n.count/Math.max(1,Math.ceil(n.count/8)))));return '<div class="dots" style="--dot:'+(colors[n.role]||'#4d9b64')+'">'+Array.from({length:nDots},()=>'<i></i>').join('')+'</div>'}
-function drawNodes(){$('emptyHint').hidden=graph.nodes.length>0;$('nodesLayer').innerHTML=graph.nodes.map(n=>{let s=spec(n.specId);return '<div class="node'+(selected===n.id?' selected':'')+(firstNode===n.id?' connect-first':'')+'" data-node="'+esc(n.id)+'" tabindex="0" role="button" aria-label="'+esc(n.name)+'"><button class="remove-node" data-delete="'+esc(n.id)+'" aria-label="Excluir '+esc(n.name)+'">×</button><img src="'+(s?.image||'')+'" alt="'+esc(n.name)+'" draggable="false"><b>'+esc(n.name)+'</b><small>'+(n.role==='Recurso'?'Recurso':fmt(n.count)+' unidades')+'</small><small>'+(n.mass===null?'Biomassa não informada':fmt(n.mass)+' kg')+'</small>'+dots(n)+'</div>'}).join('');$('nodesLayer').querySelectorAll('[data-delete]').forEach(el=>{el.onpointerdown=e=>e.stopPropagation();el.onclick=e=>{e.stopPropagation();deleteNode(el.dataset.delete)}});$('nodesLayer').querySelectorAll('[data-node]').forEach(el=>{el.onclick=()=>handleNodeClick(el.dataset.node);el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();handleNodeClick(el.dataset.node)}};el.onpointerdown=e=>{if(e.button!==0||connectMode)return;let n=nodeById(el.dataset.node),dragged=false;if(!n)return;el.setPointerCapture(e.pointerId);el.onpointermove=ev=>{if(!el.hasPointerCapture(ev.pointerId))return;dragged=true;let r=$('webContent').getBoundingClientRect();n.x=Math.max(.07,Math.min(.93,(ev.clientX-r.left)/r.width));n.y=Math.max(.1,Math.min(.9,(ev.clientY-r.top)/r.height));el.style.left=n.x*100+'%';el.style.top=n.y*100+'%';drawEdges()};el.onpointerup=()=>{el.onpointermove=null;if(dragged)persist()};el.onpointercancel=()=>{el.onpointermove=null}};let n=nodeById(el.dataset.node);el.style.left=n.x*100+'%';el.style.top=n.y*100+'%'})}
+function dots(n){
+ const d=identityOf(n,spec(n.specId));
+ if(d.massNature==='estoque'||!['individuos','indice','unidades'].includes(d.unit))return '';
+ let nDots=Math.max(0,Math.min(8,Math.ceil(n.count/Math.max(1,Math.ceil(n.count/8)))));
+ return '<div class="dots" style="--dot:'+(colors[n.role]||'#4d9b64')+'">'+Array.from({length:nDots},()=>'<i></i>').join('')+'</div>';
+}
+function nodeCaption(n){
+ const d=identityOf(n,spec(n.specId));
+ if(d.massNature==='estoque')return '<small>Recurso / estoque de matéria</small><small>'+
+   (n.mass==null?'Estoque não informado':fmt(n.mass)+' kg de recurso')+'</small>';
+ const qty=d.unit==='nenhum'?'Sem contagem':fmt(n.count)+' '+window.TeiaMetrics.UNITS[d.unit];
+ return '<small>'+esc(qty)+'</small><small>'+
+   (n.mass==null?'Biomassa não informada':fmt(n.mass)+' kg biomassa')+'</small>';
+}
+function drawNodes(){
+ $('emptyHint').hidden=graph.nodes.length>0;
+ $('nodesLayer').innerHTML=graph.nodes.map(n=>{
+  let s=spec(n.specId),d=identityOf(n,s);
+  return '<div class="node'+(selected===n.id?' selected':'')+(firstNode===n.id?' connect-first':'')+
+  '" data-node="'+esc(n.id)+'" tabindex="0" role="button" aria-label="'+esc(n.name)+
+  '" title="'+esc(window.TeiaMetrics.TYPES[d.kind])+(d.scientificName?' · '+esc(d.scientificName):'')+
+  '"><button class="remove-node" data-delete="'+esc(n.id)+'" aria-label="Excluir '+esc(n.name)+
+  '">×</button><img src="'+(s?.image||'')+'" alt="'+esc(n.name)+'" draggable="false"><b>'+
+  esc(n.name)+'</b>'+nodeCaption(n)+dots(n)+'</div>';
+ }).join('');
+ $('nodesLayer').querySelectorAll('[data-delete]').forEach(el=>{
+  el.onpointerdown=e=>e.stopPropagation();
+  el.onclick=e=>{e.stopPropagation();deleteNode(el.dataset.delete)};
+ });
+ $('nodesLayer').querySelectorAll('[data-node]').forEach(el=>{
+  el.onclick=()=>handleNodeClick(el.dataset.node);
+  el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();handleNodeClick(el.dataset.node)}};
+  el.onpointerdown=e=>{
+   if(e.button!==0||connectMode)return;
+   let n=nodeById(el.dataset.node),dragged=false;if(!n)return;
+   el.setPointerCapture(e.pointerId);
+   el.onpointermove=ev=>{
+    if(!el.hasPointerCapture(ev.pointerId))return;
+    dragged=true;
+    let r=$('webContent').getBoundingClientRect();
+    n.x=Math.max(.07,Math.min(.93,(ev.clientX-r.left)/r.width));
+    n.y=Math.max(.1,Math.min(.9,(ev.clientY-r.top)/r.height));
+    el.style.left=n.x*100+'%';el.style.top=n.y*100+'%';
+    drawEdges();
+   };
+   el.onpointerup=()=>{el.onpointermove=null;if(dragged)persist()};
+   el.onpointercancel=()=>{el.onpointermove=null};
+  };
+  let n=nodeById(el.dataset.node);
+  el.style.left=n.x*100+'%';el.style.top=n.y*100+'%';
+ });
+}
 function handleNodeClick(id){if(connectMode){if(!firstNode){firstNode=id;$('connectHint').textContent='Agora clique no segundo elemento.';drawNodes();return}if(firstNode===id){firstNode=null;drawNodes();return}let e=graph.edges.find(x=>(x.a===firstNode&&x.b===id)||(x.b===firstNode&&x.a===id));if(!e){e={id:edgeId(),a:firstNode,b:id,direction:'forward',kind:'direta',nature:'consumo',color:'#16834a',weight:.6};graph.edges.push(e)}firstNode=null;connectMode=false;setConnectState();persist();renderAll();openEdge(e.id);return}selectNode(id)}
 function setConnectState(){$('connectMode').classList.toggle('primary',!connectMode);$('connectMode').textContent=connectMode?'✓ Clique em dois nós':'⌁ Criar ligação';$('connectHint').hidden=!connectMode;if(connectMode)$('connectHint').textContent='Clique no primeiro elemento e depois no segundo.'}
 function drawEdges(){const root=$('webContent'),r=root.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;let defs='<defs>',paths='';graph.edges.forEach((e,i)=>{let color=/^#[0-9a-fA-F]{6}$/.test(e.color||'')?e.color:'#16834a';defs+='<marker id="head'+i+'" markerWidth="14" markerHeight="14" refX="12" refY="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L14 7L0 14Z" fill="'+color+'"/></marker>'});defs+='</defs>';graph.edges.forEach((e,i)=>{const a=nodeById(e.direction==='reverse'?e.b:e.a),b=nodeById(e.direction==='reverse'?e.a:e.b);if(!a||!b)return;const x=a.x*w,y=a.y*h,dx=(b.x-a.x)*w,dy=(b.y-a.y)*h,l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l;const radius=window.innerWidth<760?49:67,start=radius+5,end=radius+17;const x1=x+ux*start,y1=y+uy*start,x2=b.x*w-ux*end,y2=b.y*h-uy*end;if(Math.hypot(x2-x1,y2-y1)<22)return;const cx=(x1+x2)/2-uy*18,cy=(y1+y2)/2+ux*18;const d='M'+x1+' '+y1+'Q'+cx+' '+cy+' '+x2+' '+y2;const weight=Math.min(1,Math.max(.1,Number(e.weight)||.6)),stroke=(1.5+5.2*weight).toFixed(1),color=e.color||'#16834a',dash=e.kind==='indireta'?'stroke-dasharray="8 7"':'';paths+='<path d="'+d+'" stroke="'+color+'" stroke-width="'+stroke+'" fill="none" stroke-linecap="round" '+dash+' marker-end="url(#head'+i+')"/>';paths+='<path data-edge="'+esc(e.id)+'" class="edge-hit" d="'+d+'" stroke="transparent" stroke-width="24" fill="none" tabindex="0" role="button" aria-label="Editar ligação"/>'});$('edgeSvg').setAttribute('viewBox','0 0 '+w+' '+h);$('edgeSvg').innerHTML=defs+paths;$('edgeSvg').querySelectorAll('[data-edge]').forEach(el=>{el.onclick=ev=>{ev.stopPropagation();openEdge(el.dataset.edge)};el.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();openEdge(el.dataset.edge)}}})}
@@ -486,8 +565,27 @@ function renderDrivers(){
  summary.innerHTML=ranked.map(x=>'<div class="sim-why-card"><strong>'+esc(x.name)+' '+(x.change>0?'↑':'↓')+' '+fmt(Math.abs(x.change/Math.max(1,x.before)*100))+'%</strong><small>'+esc(x.reason)+'</small></div>').join('');
 }
 function drawChart(){let root=$('chartSvg');if(!root)return;const series=graph.nodes.filter(n=>n.role!=='Recurso').slice(0,7),palette=['#1e9349','#e6a21c','#c64f39','#2888b1','#9356b4','#699b3e','#ad735e'],max=Math.max(1,...series.flatMap(n=>simHistory[n.id]||[n.count]));let out='';for(let j=0;j<=5;j++){const y=320-j*55;out+='<path d="M66 '+y+'H730" stroke="#e0e9e1" stroke-width="1"/><text x="56" y="'+(y+4)+'" text-anchor="end" font-size="12" fill="#627768">'+Math.round(max*j/5)+'</text>'}for(let j=0;j<=6;j++){const x=66+j*110.66;out+='<path d="M'+x+' 44V320" stroke="#edf0ec"/><text x="'+x+'" y="342" text-anchor="middle" font-size="12" fill="#627768">'+j*10+'</text>'}out+='<text x="397" y="367" text-anchor="middle" font-size="13" fill="#4e735a">Tempo (passos)</text><text x="17" y="175" transform="rotate(-90 17 175)" text-anchor="middle" font-size="13" fill="#4e735a">Abundância (N)</text>';series.forEach((n,i)=>{const arr=simHistory[n.id]||[n.count],d=arr.map((v,j)=>(j?'L':'M')+(66+j/60*664).toFixed(2)+' '+(320-v/max*276).toFixed(2)).join(' ');out+='<path d="'+d+'" stroke="'+palette[i]+'" stroke-width="3.1" fill="none" stroke-linecap="round"/>';if(arr.length===1)out+='<circle cx="66" cy="'+(320-arr[0]/max*276)+'" r="4" fill="'+palette[i]+'"/>'});root.innerHTML=out;$('chartLegend').innerHTML=series.map((n,i)=>'<span><i style="background:'+palette[i]+'"></i>'+esc(n.name)+'</span>').join('')}
-function renderTable(){const rows=graph.nodes.filter(n=>n.role!=='Recurso');$('simTable').innerHTML=rows.length?'<table><thead><tr><th>Organismo</th><th>Abundância</th><th>Biomassa (kg)</th></tr></thead><tbody>'+rows.map(n=>'<tr><td>'+esc(n.name)+'</td><td>'+fmt(n.count)+'</td><td>'+(n.mass===null?'—':fmt(n.mass))+'</td></tr>').join('')+'</tbody></table>':'<p>Adicione organismos na Teia da Vida para começar.</p>'}
-function renderMini(){$('miniNodes').innerHTML=graph.nodes.slice(0,10).map(n=>{let s=spec(n.specId);return '<div class="mini-card"><img src="'+(s?.image||'')+'" alt=""><b>'+esc(n.name)+'</b><div>N: '+fmt(n.count)+'</div></div>'}).join('')}
+function renderTable(){
+ const rows=graph.nodes;
+ $('simTable').innerHTML=rows.length?
+  '<table><thead><tr><th>Elemento</th><th>Identidade</th><th>Quantidade</th><th>Unidade</th><th>kg informados</th></tr></thead><tbody>'+
+  rows.map(n=>{
+   const d=identityOf(n,spec(n.specId));
+   const qty=d.massNature==='estoque'?'—':fmt(n.count);
+   return '<tr><td>'+esc(n.name)+'</td><td>'+esc(window.TeiaMetrics.TYPES[d.kind])+
+     '</td><td>'+qty+'</td><td>'+esc(window.TeiaMetrics.UNITS[d.unit])+'</td><td>'+
+     (n.mass==null?'—':fmt(n.mass)+(d.massNature==='estoque'?' (estoque)':' (biomassa)'))+'</td></tr>';
+  }).join('')+'</tbody></table>':
+  '<p>Adicione elementos na Teia da Vida para começar.</p>';
+}
+function renderMini(){
+ $('miniNodes').innerHTML=graph.nodes.slice(0,10).map(n=>{
+  let s=spec(n.specId),d=identityOf(n,s);
+  return '<div class="mini-card"><img src="'+(s?.image||'')+'" alt=""><b>'+esc(n.name)+
+   '</b><div>'+(d.massNature==='estoque'?'Recurso':fmt(n.count)+' '+esc(window.TeiaMetrics.UNITS[d.unit]))+
+   '</div></div>';
+ }).join('');
+}
 function wire(){document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>switchView(b.dataset.nav));document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));$('sidebarToggle').onclick=()=>{const v=$('sidebar').classList.toggle('hidden');document.querySelector('.app').classList.toggle('sidebar-closed',v);setTimeout(drawEdges,70)};$('search').oninput=renderLibrary;let fs=['Todos','Produtor','Consumidores','Decompositor','Detritívoro','Necrófago','Parasita','Polinizador','Comunidade','Recurso'];$('filters').innerHTML=fs.map(f=>'<button data-filter="'+f+'" class="'+(filter===f?'active':'')+'">'+(f==='Consumidores'?'Consumidores':f==='Produtor'?'Produtores':f==='Recurso'?'Recursos':f==='Comunidade'?'Comunidades':f==='Polinizador'?'Polinizadores':f==='Detritívoro'?'Detritívoros':f==='Necrófago'?'Necrófagos':f==='Parasita'?'Parasitas':f)+'</button>').join('');$('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(c=>c.classList.toggle('active',c===b));renderLibrary()});$('addPicked').onclick=()=>{const s=selectedSpec();addNode(s);switchView('teia')};$('updatePicked').onclick=()=>{const n=selected?nodeById(selected):null;if(!n)return toast('Selecione um elemento da teia.');cancelSimulation();n.count=Math.max(0,Math.round(Number($('nValue').value)||0));n.mass=$('bValue').value===''?null:Math.max(0,Number($('bValue').value));n.role=$('roleValue').value;persist();renderAll();toast('Elemento atualizado')};$('deletePicked').onclick=()=>{if(selected)deleteNode(selected)};
 for(let id of ['exampleHome','exampleTeia'])$(id).onclick=example;
 for(let id of ['exampleInteractions','exampleInteractionsTeia'])$(id).onclick=exampleInteractions;for(let id of ['exampleAquatic','exampleAquaticTeia'])$(id).onclick=()=>exampleHabitat('aquatica');for(let id of ['exampleTerrestrial','exampleTerrestrialTeia'])$(id).onclick=()=>exampleHabitat('terrestre');$('startBlank').onclick=cleanGraph;$('clearTeia').onclick=cleanGraph;$('connectMode').onclick=()=>{connectMode=!connectMode;firstNode=null;setConnectState();drawNodes()};$('board').ondragover=e=>{e.preventDefault();$('board').classList.add('drop-active')};$('board').ondragleave=()=>$('board').classList.remove('drop-active');$('board').ondrop=e=>{e.preventDefault();$('board').classList.remove('drop-active');let s=spec(e.dataTransfer.getData('text/plain'));if(s){const p=dropPoint(e);addNode(s,p.x,p.y);switchView('teia')}};$('arrangeNodes').onclick=()=>{graph.nodes.forEach((n,i)=>{n.x=.18+(i%4)*.21;n.y=.22+Math.floor(i/4)*.22});persist();renderAll()};$('zoomMinus').onclick=()=>{zoom=Math.max(.8,zoom-.05);$('webContent').style.transform='scale('+zoom+')'};$('zoomPlus').onclick=()=>{zoom=Math.min(1.15,zoom+.05);$('webContent').style.transform='scale('+zoom+')'};
