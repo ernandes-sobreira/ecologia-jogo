@@ -14,7 +14,7 @@ document.addEventListener('error',function(ev){
 },true);
 const colors={Produtor:'#2eaa4b',Consumidor:'#e69b16',Predador:'#d64d40',Decompositor:'#9256af',Polinizador:'#d69d19',Recurso:'#5f9581',Comunidade:'#477f96',Detritívoro:'#99744b',Necrófago:'#745765',Parasita:'#ac4e47'};
 const store='teia-da-vida-pantanal-v3';let graph={nodes:[],edges:[]};try{const saved=JSON.parse(localStorage.getItem(store));if(saved&&Array.isArray(saved.nodes)&&Array.isArray(saved.edges))graph=saved}catch(e){}
-let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null;
+let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[];
 const persist=()=>{try{localStorage.setItem(store,JSON.stringify(graph))}catch(e){}};
 let toastTimer;function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600)}
 function nodeById(id){return graph.nodes.find(n=>n.id===id)}function spec(id){return base.find(s=>s.id===id)}function edgeId(){return 'e'+Date.now()+Math.random().toString(36).slice(2,7)}
@@ -62,16 +62,83 @@ function openEdge(id){edgeSelection=id;const e=graph.edges.find(x=>x.id===id);if
 function changeEdge(key,value){let e=graph.edges.find(x=>x.id===edgeSelection);if(!e)return;e[key]=value;persist();drawEdges()}
 function closeEdge(){edgeSelection=null;$('edgeEditor').hidden=true}
 function deleteEdge(){graph.edges=graph.edges.filter(e=>e.id!==edgeSelection);closeEdge();persist();renderAll();toast('Ligação excluída')}
-function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable()}
+function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers()}
 function attachTile(el){let id=el.dataset.spec;el.onclick=()=>{if(el.dataset.justDragged==='1'){el.dataset.justDragged='0';return}selectSpec(spec(id));addNode(spec(id))};el.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='copy'};el.onpointerdown=ev=>{if(ev.pointerType==='mouse')return;const s=spec(id),ghost=document.createElement('div');ghost.className='drag-ghost';ghost.innerHTML='<img src="'+s.image+'"><b>'+esc(s.name)+'</b>';document.body.appendChild(ghost);function move(e){ghost.style.left=e.clientX+10+'px';ghost.style.top=e.clientY-35+'px';let r=$('board').getBoundingClientRect();$('board').classList.toggle('drop-active',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)}function done(e){const travel=Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY);if(travel>10){el.dataset.justDragged='1';setTimeout(()=>el.dataset.justDragged='0',500)}window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',done);window.removeEventListener('pointercancel',done);ghost.remove();$('board').classList.remove('drop-active');let r=$('board').getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){let c=dropPoint(e);addNode(s,c.x,c.y);switchView('teia')}}move(ev);window.addEventListener('pointermove',move);window.addEventListener('pointerup',done);window.addEventListener('pointercancel',done)}}
 function dropPoint(ev){let r=$('webContent').getBoundingClientRect();return {x:Math.max(.08,Math.min(.92,(ev.clientX-r.left)/r.width)),y:Math.max(.12,Math.min(.88,(ev.clientY-r.top)/r.height))}}
 function exampleNames(){return graph.nodes.map(n=>n.name).join(', ')}
 function download(){let data=new Blob([JSON.stringify({version:3,app:'Teia da Vida Pantanal',...graph},null,2)],{type:'application/json'}),url=URL.createObjectURL(data),a=document.createElement('a');a.href=url;a.download='teia-da-vida-pantanal.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('Teia exportada')}
-function cancelSimulation(){if(simTimer){clearInterval(simTimer);simTimer=null}if(simInitial){graph.nodes.forEach(n=>{const v=simInitial[n.id];if(v){n.count=v.count;n.mass=v.mass}})}simInitial=null;simStep=0;simHistory={};$('timeSlider').value=0;$('stepOut').textContent='0 / 60'}
-function ensureSim(){if(!simInitial){simInitial=Object.fromEntries(graph.nodes.map(n=>[n.id,{count:n.count,mass:n.mass}]));simHistory=Object.fromEntries(graph.nodes.map(n=>[n.id,[n.count]]))}}
-function advance(){if(simStep>=60){stopTimer();return}ensureSim();const scenario=$('scenario').value,intensity=Number($('intensity').value)/100,old=Object.fromEntries(graph.nodes.map(n=>[n.id,n.count])),updates={};for(let n of graph.nodes){if(n.role==='Recurso'){updates[n.id]=0;continue}let feeders=graph.edges.filter(e=>e.b===n.id&&e.direction!=='reverse'&&e.kind==='direta'&&e.nature==='consumo'),hunted=graph.edges.filter(e=>e.a===n.id&&e.direction!=='reverse'&&e.kind==='direta'&&e.nature==='consumo'),availability=feeders.length?feeders.reduce((sum,e)=>sum+(nodeById(e.a)?.role==='Recurso'?1:(old[e.a]/Math.max(1,simInitial[e.a]?.count||1)))*e.weight,0)/feeders.reduce((sum,e)=>sum+e.weight,0):1;let delta=.002+(Math.min(2,Math.max(.05,availability))-1)*.055-hunted.reduce((sum,e)=>sum+(e.weight||0),0)*.017;if(scenario==='seca'&&n.role==='Produtor')delta-=.12*intensity;if(scenario==='recuperacao'&&n.role==='Produtor')delta+=.09*intensity;if(scenario==='predacao'&&n.role==='Predador')delta+=.08*intensity;if(scenario==='predacao'&&hunted.length)delta-=.03*intensity;updates[n.id]=Math.max(0,Math.min(1e6,old[n.id]*(1+Math.min(.13,Math.max(-.28,delta)))))}for(let n of graph.nodes){const first=simInitial[n.id];n.count=Math.round(updates[n.id]);if(first?.mass!==null&&first?.mass!==undefined&&first.count>0)n.mass=Math.round(100*first.mass*updates[n.id]/first.count)/100;simHistory[n.id].push(n.count)}simStep++;$('stepOut').textContent=simStep+' / 60';$('timeSlider').value=simStep;persist();renderAll();if(simStep===60)stopTimer()}
-function stopTimer(){if(simTimer)clearInterval(simTimer);simTimer=null}
-function resetSim(){stopTimer();cancelSimulation();persist();renderAll()}
+function modelOptions(){return {scenario:$('scenario').value,intensity:Number($('intensity').value),reproduction:Number($('reproFactor').value),capacity:Number($('capacityFactor').value),predation:Number($('predationFactor').value),competition:Number($('competitionFactor').value),lag:Number($('lagSteps').value)}}
+function cancelSimulation(){
+ stopTimer();
+ if(simInitial)graph.nodes.forEach(n=>{const first=simInitial[n.id];if(first){n.count=first.count;n.mass=first.mass}});
+ simInitial=null;simModelState=null;simReports=[];simStep=0;simHistory={};
+ $('timeSlider').value=0;$('stepOut').textContent='0 / 60';
+}
+function ensureSim(){
+ if(simInitial)return;
+ simInitial=Object.fromEntries(graph.nodes.map(n=>[n.id,{count:n.count,mass:n.mass}]));
+ simModelState=window.TeiaDynamics.init(graph.nodes);
+ simHistory=Object.fromEntries(graph.nodes.map(n=>[n.id,[n.count]]));
+}
+function advance(){
+ if(simStep>=60){stopTimer();return}
+ if(!window.TeiaDynamics){stopTimer();toast('Motor ecológico indisponível; atualize a página.');return}
+ if(!graph.nodes.some(n=>n.role!=='Recurso')){stopTimer();toast('Adicione pelo menos um organismo para simular.');return}
+ ensureSim();
+ const outcome=window.TeiaDynamics.advance(graph.nodes,graph.edges,simModelState,modelOptions());
+ simModelState=outcome.state;simReports=outcome.reports;simStep=outcome.state.step;
+ for(const v of outcome.values){
+   const n=nodeById(v.id);
+   if(!n)continue;
+   n.count=v.count;n.mass=v.mass;
+   (simHistory[v.id]||=([])).push(v.count);
+ }
+ $('stepOut').textContent=simStep+' / 60';$('timeSlider').value=simStep;
+ persist();renderAll();
+ if(simStep>=60)stopTimer();
+}
+function stopTimer(){if(simTimer){clearInterval(simTimer);simTimer=null}}
+function resetSim(){cancelSimulation();persist();renderAll()}
+function renderDrivers(){
+ const focus=$('simFocus'),area=$('simCauses'),summary=$('simDriversSummary');
+ if(!focus||!area||!summary)return;
+ const visible=graph.nodes.filter(n=>n.role!=='Recurso');
+ let chosen=focus.value;
+ if(!visible.some(n=>n.id===chosen))chosen=visible[0]?.id||'';
+ focus.innerHTML=visible.map(n=>'<option value="'+esc(n.id)+'">'+esc(n.name)+'</option>').join('');
+ if(chosen)focus.value=chosen;
+ if(!visible.length){
+   area.innerHTML='<div class="sim-causes-empty">Adicione organismos à teia para investigar reprodução, capacidade de suporte, alimento, competição e predação.</div>';
+   summary.innerHTML='';return;
+ }
+ if(!simReports.length){
+   area.innerHTML='<div class="sim-causes-empty"><strong>Escolha um cenário e avance um passo.</strong> O modelo vai decompor a variação de cada população em reprodução e causas de mortalidade. Ligue alimento → consumidor e marque a natureza da relação como “Consumo” para ativar a dinâmica alimentar.</div>';
+   summary.innerHTML='';return;
+ }
+ const report=simReports.find(x=>x.id===chosen);
+ if(!report){area.innerHTML='';summary.innerHTML='';return}
+ const delta=report.change,sign=delta>.005?'+':'',classification=delta<-.005?'loss':delta>.005?'':'stable';
+ const factors=[
+  ['Reprodução',report.births,false],
+  ['Mortalidade natural',report.natural,true],
+  ['Limite de densidade / K',report.density,true],
+  ['Escassez de alimento',report.starvation,true],
+  ['Competição por alimento',report.competition,true],
+  ['Herbivoria / predação',report.predation,true],
+  ['Estresse ambiental da seca',report.climate,true]
+ ];
+ const rows=factors.filter(x=>x[1]>.0005).map(([label,value,loss])=>
+   '<div class="sim-factor'+(loss?' loss':'')+'"><span>'+label+'</span><b>'+(loss?'−':'+')+fmt(value)+'</b></div>').join('');
+ const opts=modelOptions(),f=report.food!=null?fmt(report.food*100)+'%':'—',lagF=report.laggedFood!=null?fmt(report.laggedFood*100)+'%':'—';
+ area.innerHTML='<div class="sim-cause-head"><strong>'+esc(report.name)+': '+fmt(report.before)+' → '+fmt(report.after)+' unidades modeladas</strong><span class="sim-delta '+classification+'">'+sign+fmt(delta)+' neste passo</span></div>'+
+ '<p class="sim-cause-caption">'+esc(report.reason)+'</p>'+
+ '<div class="sim-factors">'+rows+'</div>'+
+ '<p class="sim-eco-footnote">Capacidade de suporte estimada (K): <b>'+(report.capacity==null?'—':fmt(report.capacity))+'</b> unidades · Alimento disponível agora: <b>'+f+'</b> da referência · Efeito alimentar aplicado à reprodução: <b>'+lagF+'</b> · Atraso configurado: <b>'+opts.lag+' passo(s)</b>.'+
+ (report.implicitDiet?' Esta população não tem ligação de consumo: o modelo assume alimentação externa não cadastrada.':'')+
+ ' Os valores internos têm decimais; os nós arredondam a abundância para facilitar a leitura.</p>';
+ const ranked=simReports.filter(x=>x.role!=='Recurso'&&Math.abs(x.change)>.0005).sort((a,b)=>Math.abs(b.change/Math.max(1,b.before))-Math.abs(a.change/Math.max(1,a.before))).slice(0,3);
+ summary.innerHTML=ranked.map(x=>'<div class="sim-why-card"><strong>'+esc(x.name)+' '+(x.change>0?'↑':'↓')+' '+fmt(Math.abs(x.change/Math.max(1,x.before)*100))+'%</strong><small>'+esc(x.reason)+'</small></div>').join('');
+}
 function drawChart(){let root=$('chartSvg');if(!root)return;const series=graph.nodes.filter(n=>n.role!=='Recurso').slice(0,7),palette=['#1e9349','#e6a21c','#c64f39','#2888b1','#9356b4','#699b3e','#ad735e'],max=Math.max(1,...series.flatMap(n=>simHistory[n.id]||[n.count]));let out='';for(let j=0;j<=5;j++){const y=320-j*55;out+='<path d="M66 '+y+'H730" stroke="#e0e9e1" stroke-width="1"/><text x="56" y="'+(y+4)+'" text-anchor="end" font-size="12" fill="#627768">'+Math.round(max*j/5)+'</text>'}for(let j=0;j<=6;j++){const x=66+j*110.66;out+='<path d="M'+x+' 44V320" stroke="#edf0ec"/><text x="'+x+'" y="342" text-anchor="middle" font-size="12" fill="#627768">'+j*10+'</text>'}out+='<text x="397" y="367" text-anchor="middle" font-size="13" fill="#4e735a">Tempo (passos)</text><text x="17" y="175" transform="rotate(-90 17 175)" text-anchor="middle" font-size="13" fill="#4e735a">Abundância (N)</text>';series.forEach((n,i)=>{const arr=simHistory[n.id]||[n.count],d=arr.map((v,j)=>(j?'L':'M')+(66+j/60*664).toFixed(2)+' '+(320-v/max*276).toFixed(2)).join(' ');out+='<path d="'+d+'" stroke="'+palette[i]+'" stroke-width="3.1" fill="none" stroke-linecap="round"/>';if(arr.length===1)out+='<circle cx="66" cy="'+(320-arr[0]/max*276)+'" r="4" fill="'+palette[i]+'"/>'});root.innerHTML=out;$('chartLegend').innerHTML=series.map((n,i)=>'<span><i style="background:'+palette[i]+'"></i>'+esc(n.name)+'</span>').join('')}
 function renderTable(){const rows=graph.nodes.filter(n=>n.role!=='Recurso');$('simTable').innerHTML=rows.length?'<table><thead><tr><th>Organismo</th><th>Abundância</th><th>Biomassa (kg)</th></tr></thead><tbody>'+rows.map(n=>'<tr><td>'+esc(n.name)+'</td><td>'+fmt(n.count)+'</td><td>'+(n.mass===null?'—':fmt(n.mass))+'</td></tr>').join('')+'</tbody></table>':'<p>Adicione organismos na Teia da Vida para começar.</p>'}
 function renderMini(){$('miniNodes').innerHTML=graph.nodes.slice(0,10).map(n=>{let s=spec(n.specId);return '<div class="mini-card"><img src="'+(s?.image||'')+'" alt=""><b>'+esc(n.name)+'</b><div>N: '+fmt(n.count)+'</div></div>'}).join('')}
@@ -79,6 +146,15 @@ function wire(){document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=
 for(let id of ['exampleHome','exampleTeia'])$(id).onclick=example;for(let id of ['exampleAquatic','exampleAquaticTeia'])$(id).onclick=()=>exampleHabitat('aquatica');for(let id of ['exampleTerrestrial','exampleTerrestrialTeia'])$(id).onclick=()=>exampleHabitat('terrestre');$('startBlank').onclick=cleanGraph;$('clearTeia').onclick=cleanGraph;$('connectMode').onclick=()=>{connectMode=!connectMode;firstNode=null;setConnectState();drawNodes()};$('board').ondragover=e=>{e.preventDefault();$('board').classList.add('drop-active')};$('board').ondragleave=()=>$('board').classList.remove('drop-active');$('board').ondrop=e=>{e.preventDefault();$('board').classList.remove('drop-active');let s=spec(e.dataTransfer.getData('text/plain'));if(s){const p=dropPoint(e);addNode(s,p.x,p.y);switchView('teia')}};$('arrangeNodes').onclick=()=>{graph.nodes.forEach((n,i)=>{n.x=.18+(i%4)*.21;n.y=.22+Math.floor(i/4)*.22});persist();renderAll()};$('zoomMinus').onclick=()=>{zoom=Math.max(.8,zoom-.05);$('webContent').style.transform='scale('+zoom+')'};$('zoomPlus').onclick=()=>{zoom=Math.min(1.15,zoom+.05);$('webContent').style.transform='scale('+zoom+')'};
 $('edgeDirection').onchange=e=>changeEdge('direction',e.target.value);$('edgeKind').onchange=e=>changeEdge('kind',e.target.value);$('edgeNature').onchange=e=>changeEdge('nature',e.target.value);$('edgeColor').oninput=e=>changeEdge('color',e.target.value);$('edgeWeight').oninput=e=>{let w=Number(e.target.value);changeEdge('weight',w);$('edgeWeightOut').textContent=fmt(w)};document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{$('edgeColor').value=b.dataset.color;changeEdge('color',b.dataset.color)});$('closeEdge').onclick=closeEdge;$('doneEdge').onclick=closeEdge;$('deleteEdge').onclick=deleteEdge;
 for(let id of ['exportTop'])$(id).onclick=download;const importButton=document.createElement('button');importButton.textContent='Importar JSON';importButton.id='importJson';importButton.onclick=()=>file.click();document.querySelector('.top-actions').appendChild(importButton);const file=document.createElement('input');file.type='file';file.accept='.json,application/json';file.hidden=true;file.onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.nodes)||!Array.isArray(x.edges))throw Error();cancelSimulation();graph={nodes:x.nodes.filter(n=>spec(n.specId)),edges:x.edges};persist();renderAll();switchView('teia');toast('Teia importada')}catch(err){toast('Arquivo JSON inválido')}file.value=''};document.body.appendChild(file);
-$('intensity').oninput=()=>$('intensityOut').textContent=$('intensity').value+'%';$('scenario').onchange=resetSim;$('intensity').onchange=resetSim;$('runSim').onclick=()=>{stopTimer();simTimer=setInterval(advance,500)};$('pauseSim').onclick=stopTimer;$('stepSim').onclick=()=>{stopTimer();advance()};$('resetSim').onclick=resetSim;$('resetSimTop').onclick=resetSim;$('timeSlider').onchange=e=>{const target=Number(e.target.value);stopTimer();if(target<simStep)resetSim();while(simStep<target)advance()};$('helpBtn').onclick=()=>$('helpDialog').showModal();$('closeHelp').onclick=$('okHelp').onclick=()=>$('helpDialog').close();window.addEventListener('resize',drawEdges)}
+$('intensity').oninput=()=>$('intensityOut').textContent=$('intensity').value+'%';
+$('scenario').onchange=resetSim;$('intensity').onchange=resetSim;
+const sliders=[['reproFactor','reproOut',true],['capacityFactor','capacityOut',true],['predationFactor','predationOut',true],['competitionFactor','competitionOut',false]];
+for(const [inputId,outputId,multiplier] of sliders){
+ const el=$(inputId),output=$(outputId);
+ el.oninput=()=>output.textContent=multiplier?fmt(Number(el.value))+'×':Math.round(Number(el.value)*100)+'%';
+ el.onchange=resetSim;
+}
+$('lagSteps').onchange=resetSim;$('simFocus').onchange=renderDrivers;
+$('runSim').onclick=()=>{stopTimer();advance();if(simStep<60&&simInitial)simTimer=setInterval(advance,500)};$('pauseSim').onclick=stopTimer;$('stepSim').onclick=()=>{stopTimer();advance()};$('resetSim').onclick=resetSim;$('resetSimTop').onclick=resetSim;$('timeSlider').onchange=e=>{const target=Number(e.target.value);stopTimer();if(target<simStep)resetSim();while(simStep<target)advance()};$('helpBtn').onclick=()=>$('helpDialog').showModal();$('closeHelp').onclick=$('okHelp').onclick=()=>$('helpDialog').close();window.addEventListener('resize',drawEdges)}
 wire();renderLibrary();renderCatalog();populateControls();renderAll();switchView('painel');
 })();
