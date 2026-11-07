@@ -84,7 +84,15 @@
      {edgeId:eid},'Se quer simular a comunidade, use um índice didático em vez de número de amostras.');
     continue;
    }
-   const dedupe=[e.a,e.b].sort().join('|')+'|'+e.nature;
+   const symmetricPair=[e.a,e.b].sort().join('|');
+   const food=e.foodId===e.a?e.a:e.foodId===e.b?e.b:null;
+   const eater=food?(food===e.a?e.b:e.a):null;
+   // Predação recíproca representa dois fluxos distintos, não ligações duplicadas.
+   const dedupe=FEEDING.has(e.nature)&&food?
+    food+'>'+eater+'|'+e.nature:
+    e.nature==='parasitismo'&&[e.a,e.b].includes(e.actorId)?
+      e.actorId+'>'+([e.a,e.b].find(id=>id!==e.actorId))+'|'+e.nature:
+      symmetricPair+'|'+e.nature;
    if(duplicates.has(dedupe)){
     add('revisar','duplicate','Interação duplicada entre dois elementos',
      a.name+' / '+b.name+' já têm ligação direta do mesmo tipo.',
