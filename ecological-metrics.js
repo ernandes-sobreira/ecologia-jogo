@@ -20,23 +20,23 @@
    recurso:'Recurso não vivo / estrutura'
  };
  const UNIT_LABELS={
-  individuos:'indivíduos',amostras:'unidades amostrais',
-  colonias:'colônias',unidades:'unidades ilustrativas',nenhum:'sem contagem'
+  individuos:'indivíduos',indice:'índice didático (unidades-modelo)',amostras:'amostras registradas',
+  colonias:'colônias',unidades:'unidades de modelo',nenhum:'sem contagem'
  };
  // name, kind, units, scientificName, function detail
  const ROWS=[
- ['capim','grupo','unidades','','Gramíneas produtoras; conjunto de plantas, não uma espécie única.'],
+ ['capim','grupo','indice','','Gramíneas produtoras; conjunto de plantas, não uma espécie única.'],
  ['capivara','especie','individuos','Hydrochoerus hydrochaeris','Herbívoro semiaquático; também dispersa sementes.'],
  ['onca-pintada','especie','individuos','Panthera onca','Predador de topo.'],
  ['jacare','taxon','individuos','','Jacaré genérico: espécies distintas têm dietas e tamanhos diferentes.'],
- ['peixe','grupo','unidades','','Peixe genérico, não espécie nem população única.'],
+ ['peixe','grupo','indice','','Peixe genérico, não espécie nem população única.'],
  ['minhoca','grupo','individuos','','Detritívora do solo; fragmenta detritos, não é decompositora microbiana.'],
- ['fungos','grupo','amostras','','Conjunto de fungos; espécies, colônias ou amostras não identificadas.'],
- ['musgo','grupo','amostras','','Conjunto de briófitas; amostras, não indivíduos comparáveis.'],
+ ['fungos','grupo','indice','','Conjunto de fungos; espécies, colônias ou amostras não identificadas.'],
+ ['musgo','grupo','indice','','Conjunto de briófitas; amostras, não indivíduos comparáveis.'],
  ['serapilheira','recurso','nenhum','','Matéria orgânica morta: estoque, não organismo vivo.'],
- ['perifiton','comunidade','amostras','','Comunidade aderida que reúne produtores e heterótrofos.'],
- ['liquen','associacao','amostras','','Associação entre fungo e parceiro(s) fotossintetizantes; pode incluir outros organismos.'],
- ['biofilme','comunidade','amostras','','Comunidade microbiana aderida, com funções variadas.'],
+ ['perifiton','comunidade','indice','','Comunidade aderida que reúne produtores e heterótrofos.'],
+ ['liquen','associacao','indice','','Associação entre fungo e parceiro(s) fotossintetizantes; pode incluir outros organismos.'],
+ ['biofilme','comunidade','indice','','Comunidade microbiana aderida, com funções variadas.'],
  ['tuiuiu','especie','individuos','Jabiru mycteria','Ave aquática; consumidor de presas animais.'],
  ['garca-branca','taxon','individuos','','Nome comum usado para mais de uma garça, sem espécie definida.'],
  ['martim-pescador','taxon','individuos','','Nome comum de diversas espécies de ave piscívora.'],
@@ -54,17 +54,17 @@
  ['flores','recurso','nenhum','','Flores e estruturas reprodutivas são recursos, não espécie.'],
  ['nectar','recurso','nenhum','','Néctar é recurso energético; não indivíduo biológico.'],
  ['sementes','recurso','nenhum','','Sementes: propágulos e recurso alimentar; não taxa independentes.'],
- ['fitoplancton','comunidade','amostras','','Comunidade planctônica produtora; precisa identificar espécies para riqueza.'],
- ['zooplancton','comunidade','amostras','','Conjunto planctônico de consumidores; amostras não são indivíduos.'],
+ ['fitoplancton','comunidade','indice','','Comunidade planctônica produtora; precisa identificar espécies para riqueza.'],
+ ['zooplancton','comunidade','indice','','Conjunto planctônico de consumidores; amostras não são indivíduos.'],
  ['lambari','taxon','individuos','','Nome comum para diversos peixes, não espécie única.'],
  ['traira','taxon','individuos','','Traíra indica grupo/complexo de espécies, sem identificação definida.'],
  ['gafanhoto','grupo','individuos','','Conjunto de insetos herbívoros de diferentes espécies.'],
  ['ra','grupo','individuos','','Rãs não identificadas a espécie; dieta varia com espécie e estágio.'],
- ['bacterias-decompositoras','grupo','amostras','','Grupo funcional bacteriano; amostras não são células/espécies.'],
+ ['bacterias-decompositoras','grupo','indice','','Grupo funcional bacteriano; amostras não são células/espécies.'],
  ['caramujo-aquatico','taxon','individuos','','Molusco aquático sem espécie identificada.'],
  ['sucuri','taxon','individuos','','Sucuri genérica; não equivale a espécie especificada.'],
  ['lagarta','grupo','individuos','','Fase larval de várias espécies de lepidópteros, não táxon único.'],
- ['larvas-insetos-aquaticos','grupo','amostras','','Conjunto de diferentes insetos/estágios e funções alimentares.'],
+ ['larvas-insetos-aquaticos','grupo','indice','','Conjunto de diferentes insetos/estágios e funções alimentares.'],
  ['besouro-rola-bosta','grupo','individuos','','Grupo coprófago com várias espécies, não espécie única.'],
  ['urubu','grupo','individuos','','Várias espécies de urubus, com necrofagia predominante.'],
  ['carrapato','grupo','individuos','','Ectoparasitas de várias espécies e hospedeiros.'],
@@ -102,7 +102,7 @@
  function analyze(nodes=[],catalog=[]){
   const byId=Object.fromEntries(catalog.map(s=>[s.id,s]));
   const counts={especie:0,taxon:0,grupo:0,comunidade:0,associacao:0,recurso:0};
-  const units={individuos:0,amostras:0,colonias:0,unidades:0,nenhum:0};
+  const units={individuos:0,indice:0,amostras:0,colonias:0,unidades:0,nenhum:0};
   const identified=new Set();let individuals=0,biomass=0,biomassRows=0,resourceStock=0,
    resourceStockRows=0,living=0,undefinedCount=0,undefinedMass=0,ambiguousCount=0,
    unidentified=0,positiveOnly=0;
@@ -124,8 +124,9 @@
   });
   const issues=[];
   if(unidentified)issues.push(unidentified+' elementos ainda representam táxons não identificados a espécie, grupos, comunidades ou associações: não é possível obter a riqueza total de espécies da teia.');
-  if(ambiguousCount)issues.push(ambiguousCount+' nós usam amostras, colônias ou unidades ilustrativas: suas contagens não são somadas a indivíduos.');
+  if(ambiguousCount)issues.push(ambiguousCount+' nós usam índices didáticos, amostras, colônias ou outras unidades: suas contagens não são somadas a indivíduos.');
   if(undefinedMass)issues.push(undefinedMass+' nós biológicos não informaram biomassa em kg; a soma é parcial.');
+  if(units.amostras||units.colonias)issues.push('Amostras e colônias são unidades de registro e não crescem por reprodução no modelo. Para simular comunidades, utilize o índice didático.');
   if(individuals>0)issues.push('Soma de indivíduos é ilustrativa; sem área, período e esforço de amostragem padronizados não equivale a densidade ou abundância observada.');
   if(efforts.size>1)issues.push('Há diferentes protocolos de amostragem informados: padronize antes de comparar densidades.');
   const includedIdentified=identified.size;
