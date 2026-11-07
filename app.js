@@ -19,7 +19,7 @@ const persist=()=>{try{localStorage.setItem(store,JSON.stringify(graph))}catch(e
 let toastTimer;function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600)}
 function nodeById(id){return graph.nodes.find(n=>n.id===id)}function spec(id){return base.find(s=>s.id===id)}function edgeId(){return 'e'+Date.now()+Math.random().toString(36).slice(2,7)}
 function selectedSpec(){return spec(preset)}
-function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(drawEdges);if(view==='simulacoes')requestAnimationFrame(drawChart);window.scrollTo({top:0,behavior:'instant'})}
+function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(()=>{drawEdges();renderFlood()});if(view==='simulacoes')requestAnimationFrame(()=>{drawChart();renderFlood()});window.scrollTo({top:0,behavior:'instant'})}
 function roleCss(role){return /^[\wÀ-ÿ ]+$/.test(role)?role:'Outro'}
 function itemTile(s){return '<button class="tile'+(s.id===preset?' selected':'')+'" data-spec="'+esc(s.id)+'" draggable="true" title="'+esc(s.name)+'"><img src="'+s.image+'" alt="Ilustração de '+esc(s.name)+'" draggable="false"><b>'+esc(s.name)+'</b><span class="role-tag '+roleCss(s.role)+'">'+esc(s.role)+'</span></button>'}
 function renderLibrary(){let q=$('search').value.trim().toLocaleLowerCase('pt-BR');let visible=base.filter(s=>(filter==='Todos'||s.role===filter||(filter==='Consumidores'&&['Consumidor','Predador','Detritívoro','Necrófago','Parasita'].includes(s.role)))&&s.name.toLocaleLowerCase('pt-BR').includes(q));$('library').innerHTML=visible.map(itemTile).join('');$('library').querySelectorAll('.tile').forEach(el=>attachTile(el));}
@@ -95,12 +95,52 @@ function changeEdge(key,value){
 }
 function closeEdge(){edgeSelection=null;$('edgeEditor').hidden=true}
 function deleteEdge(){graph.edges=graph.edges.filter(e=>e.id!==edgeSelection);closeEdge();persist();renderAll();toast('Ligação excluída')}
-function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers()}
+function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood()}
 function attachTile(el){let id=el.dataset.spec;el.onclick=()=>{if(el.dataset.justDragged==='1'){el.dataset.justDragged='0';return}selectSpec(spec(id));addNode(spec(id))};el.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='copy'};el.onpointerdown=ev=>{if(ev.pointerType==='mouse')return;const s=spec(id),ghost=document.createElement('div');ghost.className='drag-ghost';ghost.innerHTML='<img src="'+s.image+'"><b>'+esc(s.name)+'</b>';document.body.appendChild(ghost);function move(e){ghost.style.left=e.clientX+10+'px';ghost.style.top=e.clientY-35+'px';let r=$('board').getBoundingClientRect();$('board').classList.toggle('drop-active',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)}function done(e){const travel=Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY);if(travel>10){el.dataset.justDragged='1';setTimeout(()=>el.dataset.justDragged='0',500)}window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',done);window.removeEventListener('pointercancel',done);ghost.remove();$('board').classList.remove('drop-active');let r=$('board').getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){let c=dropPoint(e);addNode(s,c.x,c.y);switchView('teia')}}move(ev);window.addEventListener('pointermove',move);window.addEventListener('pointerup',done);window.addEventListener('pointercancel',done)}}
 function dropPoint(ev){let r=$('webContent').getBoundingClientRect();return {x:Math.max(.08,Math.min(.92,(ev.clientX-r.left)/r.width)),y:Math.max(.12,Math.min(.88,(ev.clientY-r.top)/r.height))}}
 function exampleNames(){return graph.nodes.map(n=>n.name).join(', ')}
 function download(){let data=new Blob([JSON.stringify({version:3,app:'Teia da Vida Pantanal',...graph},null,2)],{type:'application/json'}),url=URL.createObjectURL(data),a=document.createElement('a');a.href=url;a.download='teia-da-vida-pantanal.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('Teia exportada')}
-function modelOptions(){return {scenario:$('scenario').value,intensity:Number($('intensity').value),reproduction:Number($('reproFactor').value),capacity:Number($('capacityFactor').value),predation:Number($('predationFactor').value),competition:Number($('competitionFactor').value),lag:Number($('lagSteps').value)}}
+function pulseOptions(){return {enabled:!!$('pulseEnabled')?.checked,amplitude:Number($('pulseAmplitude')?.value||100),start:$('pulseStart')?.value||'enchente'}}
+function pulseAt(step=simStep){return window.TeiaFlood?.at(step,pulseOptions())||null}
+function modelOptions(step=simStep){const flood=pulseAt(step);return {
+ scenario:$('scenario').value,intensity:Number($('intensity').value),
+ reproduction:Number($('reproFactor').value),capacity:Number($('capacityFactor').value),
+ predation:Number($('predationFactor').value),competition:Number($('competitionFactor').value),lag:Number($('lagSteps').value),
+ flood,habitats:flood&&window.TeiaFlood?Object.fromEntries(graph.nodes.map(n=>[n.id,window.TeiaFlood.habitat(n,flood)])):{}
+}}
+function renderFlood(){
+ const svg=$('floodSvg');if(!svg)return;
+ const hydro=pulseAt(simStep);if(!hydro){$('floodDescription').textContent='O módulo hidrológico ainda não carregou. Recarregue a página.';return}
+ const opts=pulseOptions(),profile=window.TeiaFlood.cycle(opts),x=k=>45+k*580/60,y=v=>105-v*80;
+ const path=profile.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v.water).toFixed(1)).join(' ');
+ const area=path+'L625 105L45 105Z';
+ let out='<defs><linearGradient id="floodShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#72bcd5" stop-opacity=".40"/><stop offset="1" stop-color="#72bcd5" stop-opacity=".03"/></linearGradient></defs>';
+ for(let i=0;i<4;i++){const left=x(i*15),labels=profile[i*15]?.label;out+='<rect x="'+left+'" y="12" width="'+(580/4)+'" height="96" fill="'+(i%2?'#f3faf8':'#fafdfb')+'"/><text x="'+(left+580/8)+'" y="129" fill="#527d70" text-anchor="middle" font-size="11">'+esc(labels)+'</text>'}
+ for(let i=0;i<=2;i++){let v=i/2,yy=y(v);out+='<path d="M45 '+yy+'H625" stroke="#d8e7e1" stroke-width="1"/><text x="39" y="'+(yy+4)+'" fill="#658577" text-anchor="end" font-size="11">'+Math.round(v*100)+'</text>'}
+ out+='<path d="'+area+'" fill="url(#floodShade)"/><path d="'+path+'" stroke="'+(opts.enabled?'#1683aa':'#93aaa2')+'" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" fill="none"/>';
+ const markerStep=Math.min(60,simStep),mx=x(markerStep),my=y(hydro.water);
+ out+='<path d="M'+mx+' 12V108" stroke="#dd9134" stroke-width="1.5" stroke-dasharray="4 4"/><circle cx="'+mx+'" cy="'+my+'" r="6" fill="#dd9134" stroke="#fff" stroke-width="2"/>';
+ svg.innerHTML=out;
+ const pct=v=>Math.round(v*100)+' / 100';
+ $('floodPhaseLabel').textContent=hydro.label;
+ $('floodStepLabel').textContent='Passo '+simStep+' / 60';
+ $('floodWaterValue').textContent=pct(hydro.water);
+ $('floodAreaValue').textContent=pct(hydro.inundated);
+ $('floodConnectivityValue').textContent=pct(hydro.connectivity);
+ $('floodNote').textContent=hydro.enabled?'Fase inicial: '+window.TeiaFlood.LABELS[opts.start]+'. Amplitude: '+opts.amplitude+'% da curva didática. Os passos são abstratos.':'Pulso desligado: ambiente de referência constante.';
+ $('floodDescription').textContent=hydro.note;
+ $('pulseAmplitudeOut').textContent=opts.amplitude+'%';
+ document.querySelectorAll('[data-pulse-phase]').forEach(button=>{
+  const active=hydro.phase===button.dataset.pulsePhase,starting=opts.start===button.dataset.pulsePhase;
+  button.classList.toggle('active',active);button.classList.toggle('start',starting);
+  button.setAttribute('aria-pressed',String(starting));
+  button.title='Começar o ciclo na fase '+button.textContent;
+ });
+ const waterOverlay=$('floodWaterOverlay'),badge=$('floodBoardChip');
+ if(waterOverlay)waterOverlay.style.height=hydro.enabled?Math.round(9+52*hydro.inundated)+'%':'0';
+ if(badge){badge.hidden=!hydro.enabled;badge.textContent=hydro.label+' · conectividade '+Math.round(hydro.connectivity*100)+'/100';}
+}
+
 function cancelSimulation(){
  stopTimer();
  if(simInitial)graph.nodes.forEach(n=>{const first=simInitial[n.id];if(first){n.count=first.count;n.mass=first.mass}});
@@ -118,7 +158,7 @@ function advance(){
  if(!window.TeiaDynamics){stopTimer();toast('Motor ecológico indisponível; atualize a página.');return}
  if(!graph.nodes.some(n=>n.role!=='Recurso')){stopTimer();toast('Adicione pelo menos um organismo para simular.');return}
  ensureSim();
- const outcome=window.TeiaDynamics.advance(graph.nodes,graph.edges,simModelState,modelOptions());
+ const outcome=window.TeiaDynamics.advance(graph.nodes,graph.edges,simModelState,modelOptions(simStep+1));
  simModelState=outcome.state;simReports=outcome.reports;simStep=outcome.state.step;
  for(const v of outcome.values){
    const n=nodeById(v.id);
@@ -158,7 +198,8 @@ function renderDrivers(){
   ['Escassez de alimento',report.starvation,true],
   ['Competição por alimento',report.competition,true],
   ['Herbivoria / predação',report.predation,true],
-  ['Estresse ambiental da seca',report.climate,true]
+  ['Estresse ambiental da seca',report.climate,true],
+  ['Restrição de habitat pelo pulso',report.hydrology||0,true]
  ];
  const rows=factors.filter(x=>x[1]>.0005).map(([label,value,loss])=>
    '<div class="sim-factor'+(loss?' loss':'')+'"><span>'+label+'</span><b>'+(loss?'−':'+')+fmt(value)+'</b></div>').join('');
@@ -168,6 +209,7 @@ function renderDrivers(){
  '<div class="sim-factors">'+rows+'</div>'+
  '<p class="sim-eco-footnote">Capacidade de suporte estimada (K): <b>'+(report.capacity==null?'—':fmt(report.capacity))+'</b> unidades · Alimento disponível agora: <b>'+f+'</b> da referência · Efeito alimentar aplicado à reprodução: <b>'+lagF+'</b> · Atraso configurado: <b>'+opts.lag+' passo(s)</b>.'+
  (report.implicitDiet?' Esta população não tem ligação de consumo: o modelo assume alimentação externa não cadastrada.':'')+
+ (opts.flood?.enabled&&report.habitatLabel?' Habitat: <b>'+esc(report.habitatLabel)+'</b> · fator de capacidade pelo pulso: <b>'+fmt(report.habitatCapacity||1)+'×</b>.':'')+
  ' Os valores internos têm decimais; os nós arredondam a abundância para facilitar a leitura.</p>';
  const ranked=simReports.filter(x=>x.role!=='Recurso'&&Math.abs(x.change)>.0005).sort((a,b)=>Math.abs(b.change/Math.max(1,b.before))-Math.abs(a.change/Math.max(1,a.before))).slice(0,3);
  summary.innerHTML=ranked.map(x=>'<div class="sim-why-card"><strong>'+esc(x.name)+' '+(x.change>0?'↑':'↓')+' '+fmt(Math.abs(x.change/Math.max(1,x.before)*100))+'%</strong><small>'+esc(x.reason)+'</small></div>').join('');
@@ -179,6 +221,11 @@ function wire(){document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=
 for(let id of ['exampleHome','exampleTeia'])$(id).onclick=example;for(let id of ['exampleAquatic','exampleAquaticTeia'])$(id).onclick=()=>exampleHabitat('aquatica');for(let id of ['exampleTerrestrial','exampleTerrestrialTeia'])$(id).onclick=()=>exampleHabitat('terrestre');$('startBlank').onclick=cleanGraph;$('clearTeia').onclick=cleanGraph;$('connectMode').onclick=()=>{connectMode=!connectMode;firstNode=null;setConnectState();drawNodes()};$('board').ondragover=e=>{e.preventDefault();$('board').classList.add('drop-active')};$('board').ondragleave=()=>$('board').classList.remove('drop-active');$('board').ondrop=e=>{e.preventDefault();$('board').classList.remove('drop-active');let s=spec(e.dataTransfer.getData('text/plain'));if(s){const p=dropPoint(e);addNode(s,p.x,p.y);switchView('teia')}};$('arrangeNodes').onclick=()=>{graph.nodes.forEach((n,i)=>{n.x=.18+(i%4)*.21;n.y=.22+Math.floor(i/4)*.22});persist();renderAll()};$('zoomMinus').onclick=()=>{zoom=Math.max(.8,zoom-.05);$('webContent').style.transform='scale('+zoom+')'};$('zoomPlus').onclick=()=>{zoom=Math.min(1.15,zoom+.05);$('webContent').style.transform='scale('+zoom+')'};
 $('edgeDirection').onchange=e=>changeEdge('direction',e.target.value);$('edgeKind').onchange=e=>changeEdge('kind',e.target.value);$('edgeNature').onchange=e=>changeEdge('nature',e.target.value);$('edgeFood').onchange=e=>changeEdge('foodId',e.target.value);$('edgeColor').oninput=e=>changeEdge('color',e.target.value);$('edgeWeight').oninput=e=>{let w=Number(e.target.value);changeEdge('weight',w);$('edgeWeightOut').textContent=fmt(w)};document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{$('edgeColor').value=b.dataset.color;changeEdge('color',b.dataset.color)});$('closeEdge').onclick=closeEdge;$('doneEdge').onclick=closeEdge;$('deleteEdge').onclick=deleteEdge;
 for(let id of ['exportTop'])$(id).onclick=download;const importButton=document.createElement('button');importButton.textContent='Importar JSON';importButton.id='importJson';importButton.onclick=()=>file.click();document.querySelector('.top-actions').appendChild(importButton);const file=document.createElement('input');file.type='file';file.accept='.json,application/json';file.hidden=true;file.onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.nodes)||!Array.isArray(x.edges))throw Error();cancelSimulation();graph={nodes:x.nodes.filter(n=>spec(n.specId)),edges:x.edges};persist();renderAll();switchView('teia');toast('Teia importada')}catch(err){toast('Arquivo JSON inválido')}file.value=''};document.body.appendChild(file);
+$('pulseEnabled').onchange=resetSim;
+$('pulseStart').onchange=resetSim;
+$('pulseAmplitude').oninput=()=>renderFlood();
+$('pulseAmplitude').onchange=resetSim;
+document.querySelectorAll('[data-pulse-phase]').forEach(b=>b.onclick=()=>{$('pulseStart').value=b.dataset.pulsePhase;resetSim()});
 $('intensity').oninput=()=>$('intensityOut').textContent=$('intensity').value+'%';
 $('scenario').onchange=resetSim;$('intensity').onchange=resetSim;
 const sliders=[['reproFactor','reproOut',true],['capacityFactor','capacityOut',true],['predationFactor','predationOut',true],['competitionFactor','competitionOut',false]];
