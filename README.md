@@ -118,6 +118,30 @@ Use o botão **Interações ecológicas** no painel ou **Interações** na teia 
 
 **Teste:** `node tests/metricas.test.js` (44 registros, diversidade taxonômica parcial, unidades, biomassa, compatibilidade com teias salvas e registros amostrais fixos).
 
+## Etapa 6 — auditoria ecológica automática e explicável
+
+A aba **Auditoria** também pode ser aberta pelo botão **Avaliar minha teia** (Painel) ou **Avaliar teia** (Construtor). A análise é **automática** sempre que a rede muda; **Reavaliar** recalcula imediatamente e **Baixar relatório** gera um JSON contendo indicadores, alertas, níveis estimados e limitações. Os botões **Ver elemento na teia** / **Editar ligação na teia** localizam o item diretamente no construtor. A auditoria **não altera** nós, relações ou teias salvas; os alunos corrigem conscientemente.
+
+### O que o motor `ecological-audit.js` faz
+
+- Identifica relações com elemento ausente, vínculos consigo mesmo, mecanismo não calculado, duplicação de um mesmo processo, papéis inconsistentes, amostras usadas como se fossem indivíduos e alimento/presa sem identificação explícita.
+- Mostra compartimentos biológicos sem ligações diretas, conjuntos desconectados e predadores cujas presas ainda não estão representadas. **Não presume que uma ausência no diagrama seja ausência real na natureza** e não obriga a conectar subteias de hábitats distintos.
+- Distingue relações de predação/herbivoria entre organismos vivos das vias de **detritivoria, necrofagia e recursos**. Ligações indiretas mostram apenas caminhos de dois elos desenhados: **caminho topológico não demonstra causalidade** nem adiciona um fluxo duplicado.
+- Estima a **posição trófica aproximada** nas redes diretas de consumo, com **produtor = 1** e **consumidor = 1 + média dos níveis das presas** quando a cadeia chega a produtores conhecidos. A dieta completa não é conhecida, de modo que mesmo posições calculáveis são **provisórias**. Caminhos sem base, ciclos e relações ambíguas podem resultar em posição **não estimada** ou **parcial**; produtores não precisam ser acrescentados a subteias puramente detritais.
+- Não confunde o número de **compartimentos** com a riqueza de **espécies**, nem soma abundâncias de indivíduos com amostras ou índices didáticos. Não calcula conectância empírica entre espécies quando os nós misturam categorias taxonômicas e recursos. Mostra contagens apenas descritivas dos elos registrados.
+- Classifica avisos como **estrutura**, **revisar** ou **contexto**, com justificativas e propostas de investigação. **Não gera pontuação de validade ou correção automática de relações**.
+
+**Uso didático sugerido:** montar capim → capivara → onça, confirmar alimento e tipo da relação nas setas e abrir Auditoria. A cadeia produz níveis provisórios 1, 2 e 3. Acrescentar um organismo sem ligações gera alerta de isolamento. Criar uma ligação indireta sem elos mediadores mostra a necessidade de justificar a mediação. Colocar serapilheira → minhoca por detritivoria gera via detrital, **não** uma cadeia trófica que comece em produtor vivo.
+
+**Limitações:** nenhuma das verificações confirma ocorrência local, espécie, abundância, conteúdo estomacal ou papel funcional sem observações. A posição trófica formal depende da dieta e de decisões sobre agregação de taxa; este módulo emprega uma aproximação sem calibração. Ciclos alimentares podem ser biologicamente possíveis, mas não se lhes atribui posição numérica unívoca. Relações indiretas podem existir mesmo sem caminho explícito de dois elos. Alertas são *hipóteses de revisão* e não acusações automáticas de erro.
+
+**Referências metodológicas:**
+- Dunne, Williams & Martinez (2002), *Food-web structure and network theory: The role of connectance and size*: https://pubmed.ncbi.nlm.nih.gov/12235364/
+- *The origin of motif families in food webs* (2017), formalização de posição trófica via dieta: https://www.nature.com/articles/s41598-017-15496-1
+- GBIF, *Guide for publishing biological survey and monitoring data*, seção sobre esforço amostral: https://docs.gbif.org/guide-publishing-survey-data/en/
+
+**Teste reproduzível:** `node tests/auditoria.test.js`, além dos testes das etapas 2 a 5.
+
 ## Limitações científicas
 A simulação continua conceitual e não foi calibrada com observações de campo. A contagem de elementos não corresponde à riqueza de espécies quando há grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As interações diretas agora têm regras didáticas distintas; efeitos indiretos são registrados como caminhos mediados e não acrescentam forças independentes, para evitar duplicidade. Isso não equivale a um modelo demográfico calibrado para espécies do Pantanal.
 
