@@ -194,3 +194,63 @@
 @media(max-width:1000px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.eco-group-counts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:400px){.eco-group-counts{grid-template-columns:1fr}.stats{gap:6px}.stats .stat{padding:8px}.stats .stat strong{font-size:19px}}
+
+/* ETAPA 6 — avaliação científica automática, sem nota de "qualidade" artificial */
+.audit-view-head{align-items:start}
+.audit-disclaimer{font-size:12px;line-height:1.6;color:#456c57;background:#eff7f1;
+ border:1px solid #d0e3d3;border-radius:12px;padding:12px 15px;margin:8px 0 13px}
+.audit-overview{padding:15px;border:1px solid #bed9c7;background:#fff;border-radius:16px;box-shadow:var(--shadow)}
+.audit-overview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.audit-overview-head small{display:block;color:#708775;font-size:10px;font-weight:800;letter-spacing:.06em}
+.audit-overview-head strong{display:block;font-size:20px;color:#1b6445;margin-top:3px}
+.audit-overview-head>span{font-size:12px;color:#5e816a}
+.audit-overview[data-status="estrutura"]{border-color:#e7c3ba}
+.audit-overview[data-status="estrutura"] .audit-overview-head strong{color:#9e4b36}
+.audit-overview[data-status="revisar"]{border-color:#e3d1a9}
+.audit-overview[data-status="revisar"] .audit-overview-head strong{color:#906322}
+.audit-counters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.audit-metric{background:#f5faf7;padding:10px 12px;border:1px solid #e1ece5;border-radius:10px;min-width:0}
+.audit-metric b{display:block;font-size:23px;font-variant-numeric:tabular-nums;color:#235c40}
+.audit-metric span{font-size:11px;color:#5f7b68;line-height:1.4;display:block}
+.audit-two-col{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.85fr);gap:13px;margin-top:13px}
+.audit-panel{background:#fff;border:1px solid #d3e3d8;border-radius:16px;padding:17px;box-shadow:var(--shadow);min-width:0;margin-top:13px}
+.audit-two-col>.audit-panel{margin-top:0}
+.audit-panel-head h2{font-size:17px;line-height:1.3;color:#21583f;margin:0}
+.audit-panel-head p{font-size:12px;line-height:1.5;color:#6b8675;margin:5px 0 13px}
+.audit-issue{border-left:3px solid #94af9f;background:#f9fcf9;border-radius:8px;
+ padding:10px 12px;margin:7px 0}
+.audit-issue[data-severity="revisar"]{border-color:#cea662;background:#fffaf0}
+.audit-issue[data-severity="erro"]{border-color:#d28d79;background:#fff7f4}
+.audit-issue-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.audit-issue-title strong{font-size:12px;color:#315a43}
+.audit-issue-title small{font-size:10px;color:#708575;font-weight:750}
+.audit-issue p{color:#567262;font-size:11px;line-height:1.5;margin:6px 0}
+.audit-issue em{display:block;color:#50745c;font-size:11px;font-style:normal}
+.audit-issue button{font-size:11px;padding:6px 10px;margin-top:8px}
+.audit-many>summary{font-weight:700;font-size:12px;color:#356a4e;padding:10px;cursor:pointer}
+.audit-strengths ul{margin:0;padding-left:19px;color:#3c7652;font-size:12px;line-height:1.65}
+.audit-strengths li{margin:7px 0}
+.audit-help{border-radius:10px;background:#f0f7f2;padding:11px 13px;color:#53725f;margin-top:15px}
+.audit-help strong{font-size:12px;color:#2e6745}
+.audit-help p{font-size:11px;line-height:1.5;margin:6px 0 0}
+.audit-empty{font-size:12px;color:#5f7869;padding:13px;border:1px dashed #c9d9cf;border-radius:10px}
+.audit-table-wrap{overflow:auto}
+.audit-table-wrap table{width:100%;min-width:630px;border-collapse:collapse;font-size:12px}
+.audit-table-wrap td,.audit-table-wrap th{padding:9px 11px;text-align:left;border-bottom:1px solid #e6eee8;vertical-align:middle}
+.audit-table-wrap th{background:#f0f7f1;color:#31654b;font-size:11px}
+.audit-table-wrap td{color:#4c6f5a}
+.audit-level-unknown{color:#907452;font-size:11px}
+.audit-level-partial{font-size:10px;color:#a07836}
+.audit-paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.audit-path{border:1px solid #dceade;padding:12px;border-radius:10px;background:#f7fbf8}
+.audit-path strong{display:block;color:#2e6647;font-size:12px}
+.audit-path p{font-size:11px;color:#577360;line-height:1.55;margin:6px 0}
+.audit-subhead{grid-column:1/-1;font-size:13px;font-weight:750;color:#39684d;margin:8px 0 0}
+.audit-paths .audit-empty{grid-column:1/-1}
+.audit-limitations{font-size:12px;line-height:1.6;color:#536f5c}
+.audit-limitations ul{padding-left:19px}
+.audit-limitations li{margin:6px 0}
+.audit-method{font-size:11px;line-height:1.6;color:#69806d;margin:14px 0 8px}
+.audit-method a{color:#237451;text-decoration:underline}
+@media(max-width:1040px){.audit-two-col{grid-template-columns:1fr}.audit-counters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.audit-counters{grid-template-columns:repeat(2,minmax(0,1fr))}.audit-paths{grid-template-columns:1fr}.audit-panel{padding:13px}}
