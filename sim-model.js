@@ -1,4 +1,4 @@
-/* Teia da Vida — motor populacional didático, v2 com pulso de inundação.
+/* Teia da Vida — motor populacional didático, v4 com processos distintos por relação.
    Unidades: abundância por nó (com unidade definida pelo professor); um passo abstrato.
    Os coeficientes são ilustrativos e NÃO estimativas de campo do Pantanal.
    Escopo: reprodução, capacidade de suporte, competição por alimento, predação,
@@ -43,7 +43,9 @@
       lag: Math.round(minmax(finite(raw.lag,2),0,4)),
       flood: raw.flood?.enabled ? {enabled:true,phase:String(raw.flood.phase||''),water:minmax(finite(raw.flood.water,.45),0,1),inundated:minmax(finite(raw.flood.inundated,.45),0,1),connectivity:minmax(finite(raw.flood.connectivity,.45),0,1)} : {enabled:false},
       habitats: raw.habitats && typeof raw.habitats==='object' ? raw.habitats : {},
-      biogeoEffects: raw.biogeoEffects && typeof raw.biogeoEffects==='object' ? raw.biogeoEffects : {}
+      biogeoEffects: raw.biogeoEffects && typeof raw.biogeoEffects==='object' ? raw.biogeoEffects : {},
+      interactions: raw.interactions && typeof raw.interactions==='object' ? raw.interactions : null,
+      organicIndex: minmax(finite(raw.organicIndex,50),0,100)
     };
   }
   function foodLink(edge,nodeById) {
@@ -59,14 +61,15 @@
     return {...edge,a:foodId,b:consumerId};
   }
   function init(nodes) {
-    const initial={},pop={},foodHistory={};
+    const initial={},pop={},foodHistory={},popHistory={};
     for (const n of nodes) {
       const N=Math.max(0,finite(n.count));
       initial[n.id]={count:N,mass:n.mass==null?null:Math.max(0,finite(n.mass)),role:n.role,name:n.name};
       pop[n.id]=N;
       foodHistory[n.id]=[1];
+      popHistory[n.id]=[N];
     }
-    return {step:0,initial,pop,foodHistory,reports:[]};
+    return {step:0,initial,pop,foodHistory,popHistory,reports:[]};
   }
   function foodIndex(ratio) {
     const v=Math.max(0,ratio);
@@ -76,13 +79,17 @@
     const opts=normalize(rawOptions);
     if(!state || !state.initial || !state.pop) state=init(nodes);
     const byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
-    const initial=state.initial, old={}, foodHistory={}, next={}, reports=[];
+    const initial=state.initial, old={}, foodHistory={}, popHistory={}, next={}, reports=[];
+    const ecological=opts.interactions;
+    const effects=ecological?.effects||{};
+    const explicitCompetitors=new Set(edges.filter(e=>e.kind!=='indireta'&&e.nature==='competicao').flatMap(e=>[e.a+'|'+e.b,e.b+'|'+e.a]));
     for (const n of nodes) {
       old[n.id]=Math.max(0,finite(state.pop[n.id],n.count));
       if(!initial[n.id])initial[n.id]={count:Math.max(0,finite(n.count)),mass:n.mass==null?null:Math.max(0,finite(n.mass)),role:n.role,name:n.name};
       foodHistory[n.id]=Array.isArray(state.foodHistory[n.id])?[...state.foodHistory[n.id]]:[1];
+      popHistory[n.id]=Array.isArray(state.popHistory?.[n.id])?[...state.popHistory[n.id]]:[old[n.id]];
     }
-    const links=edges.map(e=>foodLink(e,byId)).filter(Boolean);
+    const links=Array.isArray(ecological?.trophicLinks)?ecological.trophicLinks:edges.map(e=>foodLink(e,byId)).filter(Boolean);
     const foodsByConsumer={},consumersByFood={};
     for (const e of links) {
       (foodsByConsumer[e.b] ||= []).push(e);
@@ -100,8 +107,24 @@
       for(const e of foods) {
         const source=byId[e.a],w=minmax(finite(e.weight,.6),.1,1);
         const ref=initial[e.a]?.count||0;
-        const ratio=source.role==='Recurso' ? 1 : (ref>0?old[e.a]/ref:0);
-        weighted+=w*foodIndex(ratio);total+=w;
+        let ratio=source.role==='Recurso' ? 1 : (ref>0?old[e.a]/ref:0);
+        let quality=foodIndex(ratio);
+        if(e.nature==='detritivoria'){
+          // Only dead organic matter is a detrital resource. Depletion is a separate
+          // biogeochemical process, not mortality of a living population.
+          quality=source.role==='Recurso'?minmax(opts.organicIndex/50,0,1.4):0;
+        }else if(e.nature==='necrofagia'){
+          if(source.role==='Recurso')quality=/carcaça|restos animais/i.test(source.name||'')?1:0;
+          else{
+            const previous=state.reports?.find(r=>r.id===source.id);
+            const losses=previous?(['natural','density','starvation','competition','predation','parasitism','waterQuality','climate','hydrology']
+              .reduce((sum,key)=>sum+Math.max(0,finite(previous[key])),0)):
+              Math.max(0,finite(old[e.a]))*.03;
+            const baseline=Math.max(1,finite(initial[e.a]?.count,1));
+            quality=minmax(losses/(baseline*.05),0,1.4);
+          }
+        }
+        weighted+=w*quality;total+=w;
       }
       currentFood[n.id]=total?minmax((weighted/total)*habitatFood,0,1.4):habitatFood;
     }
@@ -111,6 +134,7 @@
     for(const prey of nodes){predationLoss[prey.id]=0;predationById[prey.id]=[];}
     for (const e of links) {
       const prey=byId[e.a],hunter=byId[e.b];
+      if(e.nature&&e.nature!=='consumo')continue; // Herbivoria, detritivoria e necrofagia têm mecanismos distintos.
       if(prey.role==='Recurso')continue; // estoque de detritos não tem dinâmica nesta fase
       const victim=old[prey.id]||0,pred=old[hunter.id]||0,predRef=initial[hunter.id]?.count||0;
       if(victim<=0||pred<=0)continue;
@@ -129,7 +153,8 @@
     // explicitamente um alimento na teia.
     for(const n of nodes){
       const id=n.id, N=old[id],role=roleOf(n),rated=RATE[role]||RATE.Outro;
-      if(role==='Recurso'){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Recurso sem contagem de indivíduos: não simulado nesta etapa.',capacity:null,food:null,laggedFood:null,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:null});continue;}
+      const eco=effects[id]||{};
+      if(role==='Recurso'){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Recurso sem contagem de indivíduos: não simulado nesta etapa.',capacity:null,food:null,laggedFood:null,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:null,herbivory:0,explicitCompetition:0,parasitism:0,mutualism:0,pollination:0,dispersal:0}});continue;}
       const f=currentFood[id],hist=foodHistory[id];
       const idx=Math.max(0,hist.length-1-opts.lag);
       const lagged=opts.lag===0?f:hist[idx];
@@ -148,7 +173,7 @@
       // A capacidade de suporte de consumidores diminui com alimentos disponíveis,
       // após um atraso demográfico editável.
       if(role!=='Produtor' && (foodsByConsumer[id]||[]).length)K*=minmax(.30+.70*food,.30,1.3);
-      if(N<=0){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Extinto na simulação: sem recrutamento externo.',capacity:K,food:f,laggedFood:food,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:h.label||null});continue;}
+      if(N<=0){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Extinto na simulação: sem recrutamento externo.',capacity:K,food:f,laggedFood:food,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:h.label||null,herbivory:0,explicitCompetition:0,parasitism:0,mutualism:0,pollination:0,dispersal:0}});continue;}
       const birthFood=role==='Produtor'?1:minmax(.20+.80*food,.05,1.25);
       const births=N*rated.r*opts.reproduction*birthFood*Math.max(0,1-N/Math.max(1,K));
       const natural=N*rated.m;
@@ -159,7 +184,7 @@
       if(competitorFood.length&&opts.competition>0){
         let overlap=0,total=0;
         for(const e of competitorFood){
-          const rivalLinks=(consumersByFood[e.a]||[]).filter(other=>other.b!==id);
+          const rivalLinks=(consumersByFood[e.a]||[]).filter(other=>other.b!==id&&!explicitCompetitors.has(id+'|'+other.b));
           const w=minmax(finite(e.weight,.6),.1,1);
           total+=w;
           for(const other of rivalLinks){
@@ -171,9 +196,20 @@
         competition=N*.040*opts.competition*Math.min(2,overlap/Math.max(.1,total));
       }
       const predation=Math.min(N*.38,predationLoss[id]||0);
+      const herbivory=minmax(finite(eco.herbivory),0,N*.20);
+      const explicitCompetition=minmax(finite(eco.competition),0,N*.20);
+      const parasitism=minmax(finite(eco.parasitism),0,N*.16);
+      const mutualism=minmax(finite(eco.mutualism),0,N*.11);
+      const pollination=minmax(finite(eco.pollination),0,N*.11);
+      const dispersal=minmax(finite(eco.dispersal),0,N*.11);
+      const partnerBenefit=minmax(
+        finite(eco.parasiteBenefit)+finite(eco.pollinatorBenefit)+finite(eco.disperserBenefit),0,N*.10);
+      // The delayed recruitment bonuses of pollination/dispersal do not represent
+      // instant adult tree growth: each step is an abstract recruitment time unit.
+      const bioticGains=minmax(mutualism+pollination+dispersal+partnerBenefit,0,N*.15);
       const hydrology=N*floodStress;
       const waterQuality=N*oxygenStress;
-      let delta=births-natural-density-starvation-competition-predation-climate-hydrology-waterQuality;
+      let delta=births+bioticGains-natural-density-starvation-competition-explicitCompetition-predation-herbivory-parasitism-climate-hydrology-waterQuality;
       // Teto explícito para estabilidade do integrador Euler didático.
       delta=minmax(delta,-N*.29,N*.17);
       let result=minmax(N+delta,0,1e6);
@@ -182,19 +218,22 @@
       const causes=[
         [births,'reprodução'],[natural,'mortalidade natural'],[density,'densidade / capacidade de suporte'],
         [starvation,'escassez de alimento'],[competition,'competição por alimento'],
-        [predation,'consumo por predadores/herbívoros'],[climate,'estresse da seca'],
+        [predation,'predação de animais'],[herbivory,'herbivoria (redução de recrutamento/tecido vegetal)'],
+        [explicitCompetition,'competição direta'],[parasitism,'custo do parasitismo'],
+        [climate,'estresse da seca'],
         [hydrology,'restrição de habitat no pulso de inundação'],
-        [waterQuality,'estresse por baixo oxigênio na água']
+        [waterQuality,'estresse por baixo oxigênio na água'],
+        [bioticGains,'benefícios ecológicos e recrutamento potencial']
       ].filter(x=>x[0]>.005).sort((a,b)=>b[0]-a[0]);
-      const mainLoss=causes.filter(c=>c[1]!=='reprodução')[0];
-      const reason= delta>0.005?'Cresceu: reprodução superou as perdas'+(food>1.05?' com maior oferta alimentar':'')+'.':
+      const mainLoss=causes.filter(c=>!['reprodução','benefícios ecológicos e recrutamento potencial'].includes(c[1]))[0];
+      const reason= delta>0.005?'Cresceu: reprodução e benefícios ecológicos superaram as perdas'+(food>1.05?' com maior oferta alimentar':'')+'.':
         delta<-.005?'Diminuiu sobretudo por '+(mainLoss?.[1]||'perdas demográficas')+'.':
         'Permaneceu quase estável: ganhos e perdas próximos.';
-      reports.push({id,name:n.name,role,before:N,after:result,change:result-N,reason,capacity:K,food:f,laggedFood:food,births,natural,density,starvation,competition,predation,climate,
+      reports.push({id,name:n.name,role,before:N,after:result,change:result-N,reason,capacity:K,food:f,laggedFood:food,births,natural,density,starvation,competition,predation,herbivory,explicitCompetition,parasitism,mutualism,pollination,dispersal,partnerBenefit,bioticGains,interactionCauses:eco.causes||[],indirectPaths:eco.indirectPaths||[],climate,
         implicitDiet:!(foodsByConsumer[id]||[]).length&&role!=='Produtor',hydrology,waterQuality,waterCapacity,nutrientFactor:minmax(finite(waterEffect.nutrientFactor,1),.7,1.5),waterReason:waterEffect.reason||'',habitatLabel:h.label||null,habitatNote:h.note||null,habitatCapacity:floodCapacity,floodPhase:opts.flood.enabled?opts.flood.phase:null});
     }
-    for(const n of nodes)foodHistory[n.id].push(currentFood[n.id]);
-    const nextState={step:(state.step||0)+1,initial,pop:next,foodHistory,reports};
+    for(const n of nodes){foodHistory[n.id].push(currentFood[n.id]);popHistory[n.id].push(next[n.id]??0);}
+    const nextState={step:(state.step||0)+1,initial,pop:next,foodHistory,popHistory,reports};
     const values=nodes.map(n=>{
       const v=next[n.id]??0,ini=initial[n.id],rounded=Math.round(v),mass=n.role==='Recurso'?ini.mass:
         (ini.mass==null?null:(ini.count>0?Math.round(100*ini.mass*v/ini.count)/100:0));
