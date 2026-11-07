@@ -41,6 +41,19 @@ Para a ligação de consumo, o aluno pode indicar **quem é o alimento ou presa*
 
 Referência didática sobre crescimento logístico, regulação dependente da densidade e competição: [OpenStax — Population Dynamics and Regulation](https://openstax.org/books/biology-2e/pages/45-4-population-dynamics-and-regulation).
 
+## Pulso de inundação do Pantanal (etapa 2)
+
+- Na aba **Simulações**, ative **Pulso de inundação** para percorrer as quatro fases: **enchente, cheia, vazante e seca**.
+- Clique nas fases para escolher a fase inicial, ou use **Fase inicial**. A amplitude é ajustável entre 30% e 140% da curva *hipotética*. Cada ciclo tem 60 passos abstratos.
+- O painel mostra **nível relativo**, **índice de área inundada** e **conectividade relativa** (escalas de 0 a 100). **Não são metros, hectares nem porcentagens observadas do Pantanal.**
+- A teia recebe um véu azul discreto que acompanha o índice de inundação. As imagens e ligações permanecem visíveis.
+- O módulo `flood-pulse.js` fornece uma curva de pulso e caracteriza ambientes aquáticos, macrófitas, campos inundáveis, organismos semiaquáticos e outros ambientes.
+- O módulo `sim-model.js` recebe as condições hidrológicas em cada passo: altera a capacidade de suporte de cada grupo, o acesso relativo a alimentos/habitats e, em alguns casos, o estresse ambiental e a exposição à predação durante a vazante.
+- Para verificar, carregue o **exemplo aquático**, execute a simulação e compare os indicadores e populações com **Pulso ligado** e **Pulso desligado**. O cenário **Sem pressão adicional** permite observar o efeito do ciclo, sem misturá-lo a uma seca excepcional.
+- A simulação **não modela oxigênio dissolvido, dequada, deslocamentos espaciais reais, chuva e vazão observadas nem mortalidade por enchentes individuais**. As respostas servem para formular hipóteses didáticas e exigiriam calibração e dados para uso científico quantitativo.
+
+**Base conceitual:** estudos sobre conectividade lateral e comunidades de peixes nas lagoas do Pantanal, como [Boletim do Instituto de Pesca (2018)](https://institutodepesca.org/index.php/bip/pt_BR/article/view/1276) e materiais da Embrapa Pantanal.
+
 ## Limitações científicas
 A simulação é conceitual e não foi calibrada com observações de campo. A etiqueta "elementos biológicos" não é riqueza de espécies quando se incluem grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As simulações dinâmicas representam principalmente ligações diretas de consumo; decomposição, parasitismo, polinização e relações indiretas podem ser desenhadas, mas não são modeladas como processos demográficos específicos.
 
