@@ -254,3 +254,73 @@
 .audit-method a{color:#237451;text-decoration:underline}
 @media(max-width:1040px){.audit-two-col{grid-template-columns:1fr}.audit-counters{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.audit-counters{grid-template-columns:repeat(2,minmax(0,1fr))}.audit-paths{grid-template-columns:1fr}.audit-panel{padding:13px}}
+
+/* ETAPA 7 — matriz de evidências e experimentos de sensibilidade */
+.science-intro{border:1px solid #c7dfcc;background:#f5faf6;padding:13px 15px;border-radius:12px;
+  color:#3d684d;margin-bottom:12px}
+.science-intro strong{color:#1d6548;font-size:14px}
+.science-intro p{font-size:12px;line-height:1.55;margin:6px 0 0}
+.evidence-counters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-bottom:13px}
+.evidence-count{background:#fff;border:1px solid #d3e5d8;border-radius:12px;padding:12px;min-width:0}
+.evidence-count strong{font-size:21px;color:#2d6243;display:block;font-variant-numeric:tabular-nums}
+.evidence-count small{font-size:10px;line-height:1.35;color:#6d8573}
+.science-split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.85fr);gap:13px}
+.science-panel{margin:0 0 13px;padding:17px;border:1px solid #d3e1d5;background:#fff;
+  border-radius:15px;box-shadow:var(--shadow);min-width:0}
+.science-panel-head h2{color:#1d593e;font-size:17px;margin:0}
+.science-panel-head p{font-size:12px;color:#647d6d;line-height:1.6;margin:5px 0 12px}
+.evidence-cards,.evidence-sources,.evidence-parameters{display:grid;gap:8px}
+.evidence-item{background:#f9fbf8;border:1px solid #e0e9df;border-radius:11px;padding:11px 13px;min-width:0}
+.evidence-item[data-tier="pantanal"]{border-left:3px solid #559f67}
+.evidence-item[data-tier="hipotese"]{border-left:3px solid #c28b53}
+.evidence-item[data-tier="analogia"],.evidence-item[data-tier="outraRegiao"]{border-left:3px solid #d4b46e}
+.evidence-item[data-tier="grupo"]{border-left:3px solid #669e9e}
+.evidence-title{display:flex;justify-content:space-between;align-items:baseline;gap:9px;flex-wrap:wrap}
+.evidence-title strong{font-size:12px;color:#265d40}
+.evidence-title small{font-size:10px;font-weight:700;color:#607f69;background:#eaf4ed;
+  border-radius:20px;padding:3px 7px}
+.evidence-item p{font-size:11px;color:#57735e;line-height:1.55;margin:7px 0 5px}
+.evidence-item button{font-size:11px;padding:6px 9px;margin-top:7px}
+.evidence-item .source-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}
+.evidence-item .source-links a{font-size:11px;color:#176b51;text-decoration:underline;line-height:1.5}
+.evidence-source{padding:10px;border:1px solid #e3ede5;background:#fbfdfb;border-radius:10px}
+.evidence-source a{font-size:12px;font-weight:750;color:#1e7651;text-decoration:underline;line-height:1.5}
+.evidence-source small{display:block;color:#6f8b77;margin-top:5px;font-size:11px;line-height:1.5}
+.evidence-param{padding:11px 13px;border:1px solid #e0e9df;border-radius:11px;background:#fbfdfb}
+.evidence-param strong{display:block;font-size:12px;color:#2b6849}
+.evidence-param .param-tag{display:inline-block;font-size:10px;padding:3px 7px;border-radius:8px;
+  background:#fff4e0;color:#91642c;margin:5px 0}
+.evidence-param p{margin:5px 0 0;font-size:11px;line-height:1.5;color:#56745d}
+.evidence-empty{padding:15px;border:1px dashed #c8ddcf;border-radius:10px;font-size:12px;color:#667e6b}
+.sensitivity-controls{display:grid;grid-template-columns:minmax(210px,1.3fr) minmax(110px,.6fr) auto;
+ gap:10px;align-items:end;margin-bottom:13px}
+.sensitivity-controls label{display:block;color:#396c51;font-size:12px;font-weight:700}
+.sensitivity-controls select{display:block;width:100%;margin-top:6px;padding:9px;
+ border:1px solid #c5dfcb;border-radius:9px;background:#fff;color:#234c35}
+.sensitivity-controls button{white-space:nowrap}
+.sensitivity-results{border-radius:12px;border:1px solid #e0ebdf;background:#f9fcf9;padding:13px}
+.sensitivity-results p{font-size:12px;color:#567765;line-height:1.6;margin:5px 0}
+.sensitivity-intro{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+.sensitivity-intro strong{font-size:14px;color:#1b6445}
+.sensitivity-intro small{font-size:11px;color:#698473}
+.sensitivity-row{display:grid;grid-template-columns:minmax(115px,1fr) repeat(3,minmax(65px,.55fr)) minmax(90px,.7fr);
+ gap:8px;align-items:center;padding:8px;border-bottom:1px solid #e2ebe3;font-size:11px}
+.sensitivity-row:last-child{border-bottom:0}
+.sensitivity-head{font-weight:750;color:#365b43;background:#edf5ee;border-radius:7px}
+.sensitivity-row strong{color:#275941}
+.sensitivity-row span{color:#55745f}
+.sensitivity-impact{display:inline-block;font-size:10px;font-weight:700;white-space:normal}
+.sensitivity-impact.large{color:#ae5d29}.sensitivity-impact.medium{color:#86652d}.sensitivity-impact.small{color:#4b8164}
+.sensitivity-hint{margin-top:10px;font-size:11px;line-height:1.6;color:#657f6e}
+.science-caution{font-size:11px;line-height:1.6;color:#6d846f;margin:12px 0 0}
+.edge-evidence-inline{font-size:11px;color:#416a50;line-height:1.45;padding:9px;
+  background:#f7faf4;border:1px solid #dceadf;border-radius:8px;margin-top:9px}
+.edge-evidence-inline strong{display:block;color:#215b3d;margin-bottom:4px}
+.edge-evidence-inline a{display:inline-block;color:#18765b;margin-top:5px;text-decoration:underline}
+@media(max-width:1060px){.science-split{grid-template-columns:1fr}.evidence-counters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.sensitivity-controls{grid-template-columns:1fr 1fr}.sensitivity-controls label:first-child{grid-column:1/-1}.sensitivity-controls button{grid-column:1/-1}}
+@media(max-width:590px){.evidence-counters{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .science-panel{padding:12px}.sensitivity-row{grid-template-columns:1.5fr 1fr 1fr;gap:4px}
+ .sensitivity-row>span:nth-child(4),.sensitivity-row>span:nth-child(5){display:none}
+ .sensitivity-head>span:nth-child(4),.sensitivity-head>span:nth-child(5){display:none}
+ .science-intro{padding:11px}}
