@@ -344,3 +344,118 @@
 .observed-card em{font-size:11px;font-style:normal;color:#875d31;line-height:1.5;display:block;
  background:#fff8ec;padding:7px 8px;border-radius:7px}
 .observed-card a{display:inline-block;margin-top:9px;color:#26764d;text-decoration:underline;font-size:11px}
+
+/* ETAPA 8 — game de missões ecológicas, preservando o laboratório livre */
+.missions-view-head{align-items:start}
+.missions-hero{display:flex;justify-content:space-between;gap:18px;align-items:center;
+ background:linear-gradient(120deg,#06492f 5%,#147b55 65%,#518e77 100%);
+ color:#fff;position:relative;overflow:hidden;border-radius:18px;padding:21px 23px;min-height:138px}
+.missions-hero:after{content:'';position:absolute;pointer-events:none;right:-30px;bottom:-38px;
+ width:47%;height:90px;background:#80c9c14a;border-radius:50%;box-shadow:0 -23px 0 #d1e4a815}
+.missions-hero>div{position:relative;z-index:1}
+.missions-hero small{font-size:10px;letter-spacing:.12em;color:#c5e6d5;font-weight:800}
+.missions-hero h2{margin:5px 0 6px;font-size:26px;letter-spacing:-.5px}
+.missions-hero p{font-size:12px;line-height:1.55;color:#e2f5e8;margin:0;max-width:490px}
+.missions-hero-score{background:#ffffff19;border:1px solid #ffffff55;border-radius:12px;
+ padding:13px 15px;text-align:center;min-width:118px;z-index:2!important}
+.missions-hero-score strong{display:block;color:#fff;font-size:29px;font-variant-numeric:tabular-nums}
+.missions-hero-score span{font-size:10px;color:#e8f7ed;line-height:1.3}
+.missions-progress{height:8px;background:#d6e9db;border-radius:30px;overflow:hidden;margin:11px 0 17px}
+.missions-progress>div{width:0;height:100%;background:#148955;transition:width .3s;border-radius:30px}
+.mission-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.mission-card{position:relative;min-width:0;display:grid;grid-template-columns:1fr;
+ justify-items:start;align-content:start;text-align:left;gap:3px;background:#fff;
+ border:1px solid #d5e6d8;border-radius:13px;padding:13px 11px;min-height:155px}
+.mission-card:not([disabled]):hover{background:#eff8f0;border-color:#85c79c}
+.mission-card.active{border:2px solid #20865b;padding:12px 10px;box-shadow:0 4px 12px #267b5325}
+.mission-card.completed{background:linear-gradient(135deg,#fff,#e9f6eb)}
+.mission-card:disabled{opacity:.52;cursor:not-allowed}
+.mission-card-num{position:absolute;right:9px;top:7px;display:grid;place-items:center;
+ background:#e2f2e6;color:#20704a;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:850}
+.mission-card img{width:78px;height:60px;object-fit:contain;object-position:left center}
+.mission-card strong{font-size:12px;line-height:1.3;color:#25543b;display:block}
+.mission-card>span:not(.mission-card-num){font-size:10px;color:#597a65;line-height:1.3}
+.mission-card small{font-size:10px;color:#438666;margin-top:4px;font-weight:750}
+.mission-workspace{border:1px solid #bbd9c4;background:#fff;border-radius:18px;
+ box-shadow:var(--shadow);padding:19px}
+.mission-main-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,.86fr);
+ align-items:center;gap:16px}
+.mission-main-head small{font-size:11px;color:#168356;font-weight:800;letter-spacing:.04em}
+.mission-main-head h2{font-size:22px;color:#165638;margin:5px 0 8px}
+.mission-main-head p{font-size:13px;color:#54735e;line-height:1.62;max-width:650px;margin:0}
+.mission-scene{height:176px;display:flex;align-items:center;justify-content:space-around;
+ position:relative;overflow:hidden;border-radius:13px;padding:10px 9px 22px;
+ background:linear-gradient(180deg,#e4f6ea 8%,#d6e8bf 55%,#98bd79 59%,#7bb889 100%)}
+.mission-scene[data-mission="alternativas"]{background:linear-gradient(180deg,#e7f5eb 0%,#b6e3df 35%,#7db7a4 80%,#49868c 100%)}
+.mission-scene[data-mission="cheia"]{background:linear-gradient(180deg,#d9eeec,#a6d6dc 55%,#72b5c9 100%)}
+.mission-scene[data-mission="dequada"]{background:linear-gradient(180deg,#d8e7da,#a2b7ac 56%,#739c9a 100%)}
+.mission-scene[data-mission="ecologo"]{background:linear-gradient(180deg,#e8f2e8,#cadfba 55%,#8ba99b 100%)}
+.mission-scene::after{content:"";position:absolute;bottom:25px;left:-20%;width:140%;height:16px;
+ background:radial-gradient(ellipse at center,#ffffff5a 0,#ffffff00 65%);animation:missionWave 5s ease-in-out infinite alternate;pointer-events:none}
+@keyframes missionWave{from{transform:translateX(-10px)}to{transform:translateX(20px)}}
+.mission-scene-asset{display:grid;justify-items:center;align-items:center;z-index:1;
+ min-width:0;max-width:31%;gap:2px}
+.mission-scene-asset img{display:block;width:100%;height:115px;object-fit:contain;
+ filter:drop-shadow(0 4px 4px #2c5d3825)}
+.mission-scene-asset small{font-size:10px;color:#164b3d;letter-spacing:0;background:#ffffffaf;
+ padding:3px 7px;border-radius:14px;text-align:center}
+.mission-scene-status{position:absolute;bottom:6px;right:10px;font-size:10px;color:#1b5d4c;
+ padding:2px 7px;border-radius:10px;background:#fafffacb;z-index:2}
+.mission-actions{display:flex;gap:8px;flex-wrap:wrap;padding:15px 0 12px;
+ border-bottom:1px solid #e4eee4;margin-bottom:14px}
+.mission-actions button{font-size:12px}
+.mission-objective,.mission-question{border:1px solid #e0ebdf;border-radius:13px;padding:13px;
+ margin-bottom:13px;background:#fbfdfb}
+.mission-objective-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.mission-objective h3,.mission-question h3{color:#1c593d;font-size:15px;margin:0 0 7px}
+.mission-objective-head span{font-size:11px;color:#4e8564;font-weight:750}
+.mission-objective p,.mission-question p{font-size:12px;line-height:1.5;color:#647d6c;margin:4px 0 10px}
+.mission-objectives{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mission-goal{background:#fff;border:1px solid #e0e6de;border-radius:10px;display:flex;
+ gap:9px;padding:10px;align-items:flex-start}
+.mission-goal.met{background:#f0f8ef;border-color:#c9e4d1}
+.mission-goal-icon{border-radius:50%;width:24px;height:24px;flex:none;display:grid;place-items:center;
+ background:#ecf0e9;color:#71806d;font-size:11px;font-weight:850}
+.mission-goal.met .mission-goal-icon{background:#2a9a63;color:#fff}
+.mission-goal strong{font-size:11px;color:#2b6547;display:block;line-height:1.35}
+.mission-goal small{font-size:10px;color:#7b8b7e;display:block;line-height:1.45;margin-top:4px}
+.mission-choices{display:grid;gap:7px}
+.mission-choice{padding:10px 12px;background:#fff;border:1px solid #d7e4d8;border-radius:10px;
+ font-size:12px;font-weight:600;color:#3b6548;text-align:left;line-height:1.45}
+.mission-choice:hover{background:#f2f9f3}
+.mission-choice.selected{background:#e8f5ed;border-color:#2c9462;box-shadow:inset 3px 0 0 #278b5f}
+.mission-choice-explanation{font-size:11px;color:#617b69;line-height:1.55;padding:9px 11px;margin-top:9px;
+ background:#f0f5f0;border-radius:8px}
+.mission-choice-explanation[data-correct="true"]{color:#21674c;background:#edf8f1}
+.mission-choice-explanation[data-correct="false"]{color:#866c35;background:#fff7e8}
+.mission-hint{border:1px dashed #cfdcce;border-radius:10px;padding:10px 13px;
+ font-size:12px;color:#446f54;margin-bottom:12px}
+.mission-hint summary{cursor:pointer;font-weight:700}
+.mission-hint p{line-height:1.5;margin:10px 0 3px}
+.mission-feedback{margin:8px 0;padding:11px 12px;background:#f0f6f2;border-left:3px solid #80aa8b;
+ border-radius:8px;color:#4b6b55;font-size:12px;line-height:1.55}
+.mission-feedback[data-status="complete"]{background:#eaf8ee;border-left-color:#389969;color:#246245}
+.mission-feedback[data-status="progress"]{background:#fff8ed;border-left-color:#cbad73;color:#785f3b}
+.mission-footer{display:flex;flex-wrap:wrap;gap:9px;align-items:center;justify-content:flex-start;margin-top:12px}
+.mission-footer button{font-size:12px}
+.mission-footer button:disabled{opacity:.52;cursor:not-allowed}
+.mission-science-note{font-size:11px;color:#748978;line-height:1.55;padding:8px 2px}
+@media(max-width:1150px){
+ .mission-cards{grid-template-columns:repeat(5,minmax(155px,1fr));overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+ .mission-card{scroll-snap-align:start}
+ .mission-objectives{grid-template-columns:1fr}
+}
+@media(max-width:690px){
+ .missions-hero{padding:15px 14px;gap:8px;min-height:125px}
+ .missions-hero h2{font-size:20px}
+ .missions-hero p{font-size:11px}
+ .missions-hero-score{min-width:87px;padding:9px}
+ .missions-hero-score strong{font-size:22px}
+ .mission-workspace{padding:12px}
+ .mission-main-head{grid-template-columns:1fr;gap:12px}
+ .mission-scene{height:153px}
+ .mission-scene-asset img{height:96px}
+ .mission-card{min-height:145px}
+ .mission-actions button{flex:1 1 auto;font-size:11px;padding:8px}
+}
+@media(prefers-reduced-motion:reduce){.mission-scene::after{animation:none}}
