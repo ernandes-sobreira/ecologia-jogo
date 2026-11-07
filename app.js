@@ -14,7 +14,7 @@ document.addEventListener('error',function(ev){
 },true);
 const colors={Produtor:'#2eaa4b',Consumidor:'#e69b16',Predador:'#d64d40',Decompositor:'#9256af',Polinizador:'#d69d19',Recurso:'#5f9581',Comunidade:'#477f96',Detritívoro:'#99744b',Necrófago:'#745765',Parasita:'#ac4e47'};
 const store='teia-da-vida-pantanal-v3';let graph={nodes:[],edges:[]};try{const saved=JSON.parse(localStorage.getItem(store));if(saved&&Array.isArray(saved.nodes)&&Array.isArray(saved.edges))graph=saved}catch(e){}
-let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[],bioState=null,bioReport=null;
+let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[],bioState=null,bioReport=null,lastInteractions=null;
 const persist=()=>{try{localStorage.setItem(store,JSON.stringify(graph))}catch(e){}};
 let toastTimer;function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600)}
 function nodeById(id){return graph.nodes.find(n=>n.id===id)}function spec(id){return base.find(s=>s.id===id)}function edgeId(){return 'e'+Date.now()+Math.random().toString(36).slice(2,7)}
@@ -161,7 +161,7 @@ function changeEdge(key,value){
 }
 function closeEdge(){edgeSelection=null;$('edgeEditor').hidden=true}
 function deleteEdge(){graph.edges=graph.edges.filter(e=>e.id!==edgeSelection);closeEdge();persist();renderAll();toast('Ligação excluída')}
-function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio()}
+function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio();renderInteractions()}
 function attachTile(el){let id=el.dataset.spec;el.onclick=()=>{if(el.dataset.justDragged==='1'){el.dataset.justDragged='0';return}selectSpec(spec(id));addNode(spec(id))};el.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='copy'};el.onpointerdown=ev=>{if(ev.pointerType==='mouse')return;const s=spec(id),ghost=document.createElement('div');ghost.className='drag-ghost';ghost.innerHTML='<img src="'+s.image+'"><b>'+esc(s.name)+'</b>';document.body.appendChild(ghost);function move(e){ghost.style.left=e.clientX+10+'px';ghost.style.top=e.clientY-35+'px';let r=$('board').getBoundingClientRect();$('board').classList.toggle('drop-active',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)}function done(e){const travel=Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY);if(travel>10){el.dataset.justDragged='1';setTimeout(()=>el.dataset.justDragged='0',500)}window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',done);window.removeEventListener('pointercancel',done);ghost.remove();$('board').classList.remove('drop-active');let r=$('board').getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){let c=dropPoint(e);addNode(s,c.x,c.y);switchView('teia')}}move(ev);window.addEventListener('pointermove',move);window.addEventListener('pointerup',done);window.addEventListener('pointercancel',done)}}
 function dropPoint(ev){let r=$('webContent').getBoundingClientRect();return {x:Math.max(.08,Math.min(.92,(ev.clientX-r.left)/r.width)),y:Math.max(.12,Math.min(.88,(ev.clientY-r.top)/r.height))}}
 function exampleNames(){return graph.nodes.map(n=>n.name).join(', ')}
@@ -281,7 +281,7 @@ function renderBio(){
 function cancelSimulation(){
  stopTimer();
  if(simInitial)graph.nodes.forEach(n=>{const first=simInitial[n.id];if(first){n.count=first.count;n.mass=first.mass}});
- simInitial=null;simModelState=null;simReports=[];simStep=0;simHistory={};bioState=null;bioReport=null;
+ simInitial=null;simModelState=null;simReports=[];simStep=0;simHistory={};bioState=null;bioReport=null;lastInteractions=null;
  $('timeSlider').value=0;$('stepOut').textContent='0 / 60';
 }
 function ensureSim(){
@@ -301,6 +301,11 @@ function advance(){
    const bio=window.TeiaBiogeo.advance(graph.nodes,bioState,bioOptions(),options.flood);
    bioState=bio.state;bioReport=bio.report;
    options.biogeoEffects=Object.fromEntries(graph.nodes.map(n=>[n.id,window.TeiaBiogeo.effects(n,bio.state,bioOptions())]));
+   options.organicIndex=bio.state.organic;
+ }
+ if(window.TeiaInteractions){
+   lastInteractions=window.TeiaInteractions.evaluate(graph.nodes,graph.edges,simModelState,options);
+   options.interactions=lastInteractions;
  }
  const outcome=window.TeiaDynamics.advance(graph.nodes,graph.edges,simModelState,options);
  simModelState=outcome.state;simReports=outcome.reports;simStep=outcome.state.step;
@@ -316,6 +321,38 @@ function advance(){
 }
 function stopTimer(){if(simTimer){clearInterval(simTimer);simTimer=null}}
 function resetSim(){cancelSimulation();persist();renderAll()}
+function renderInteractions(){
+ const root=$('interactionSummary'),warn=$('interactionWarnings'),paths=$('interactionPaths');
+ if(!root||!warn||!paths)return;
+ if(!window.TeiaInteractions){root.innerHTML='<p>Motor de interações indisponível. Atualize a página.</p>';return}
+ const opts=modelOptions();
+ const info=lastInteractions||window.TeiaInteractions.evaluate(graph.nodes,graph.edges,simModelState,opts);
+ const labels=window.TeiaInteractions.labels;
+ const summaries={
+ consumo:'Presa ↓ · Predador recebe alimento; mortalidade animal.',
+ herbivoria:'Planta perde tecido/recrutamento · Herbívoro recebe alimento.',
+ detritivoria:'Detritos disponíveis alimentam detritívoro, sem mortalidade da presa.',
+ necrofagia:'Carcaças decorrentes de mortalidade alimentam necrófago.',
+ competicao:'Custos recíprocos (−/−) quando ambos compartilham demanda.',
+ parasitismo:'Hospedeiro sofre custo · Parasita recebe benefício (+/−).',
+ mutualismo:'Benefícios para ambos (+/+), limitados pela abundância do parceiro.',
+ polinizacao:'Recursos florais e recrutamento da planta com atraso.',
+ dispersao:'Recrutamento vegetal com atraso e recompensa potencial ao dispersor.',
+ decomposicao:'Ativa ciclagem no módulo de matéria orgânica e oxigênio.',
+ outro:'Sem alteração demográfica automática.'
+ };
+ const shown=Object.entries(info.counts||{}).filter(([k,v])=>v>0);
+ root.innerHTML=shown.length?shown.map(([kind,count])=>
+ '<div class="interaction-card"><strong>'+esc(labels[k]||kind)+' <span>'+count+' ligação(ões)</span></strong><small>'+esc(summaries[k]||'')+'</small></div>').join(''):
+ '<div class="interaction-empty">Adicione dois organismos, crie uma ligação e escolha sua natureza para investigar seus efeitos.</div>';
+ const indirect=info.indirectAnnotations||0,mediated=info.indirectPaths||[];
+ paths.innerHTML=indirect?'<strong>Relações indiretas: '+indirect+'</strong><p>'+
+ (mediated.length?'Caminhos mediadores identificados: '+esc([...new Set(mediated.map(x=>x.mediator))].join(', '))+'.':
+ 'Ainda não há caminho de dois elos diretos que comprove a mediação anotada.')+
+ ' Elas não adicionam um fluxo duplicado. As cascatas aparecem ao longo dos passos.</p>':'';
+ warn.innerHTML=(info.warnings||[]).length?'<strong>Relações que precisam de revisão:</strong>'+
+ info.warnings.map(w=>'<p>'+esc(w.pair)+': '+esc(w.text)+'</p>').join(''):'';
+}
 function renderDrivers(){
  const focus=$('simFocus'),area=$('simCauses'),summary=$('simDriversSummary');
  if(!focus||!area||!summary)return;
@@ -341,7 +378,14 @@ function renderDrivers(){
   ['Limite de densidade / K',report.density,true],
   ['Escassez de alimento',report.starvation,true],
   ['Competição por alimento',report.competition,true],
-  ['Herbivoria / predação',report.predation,true],
+  ['Predação de animais',report.predation,true],
+  ['Herbivoria / perda de recrutamento vegetal',report.herbivory||0,true],
+  ['Competição direta',report.explicitCompetition||0,true],
+  ['Custo do parasitismo',report.parasitism||0,true],
+  ['Benefícios do mutualismo',report.mutualism||0,false],
+  ['Recrutamento por polinização',report.pollination||0,false],
+  ['Recrutamento por dispersão',report.dispersal||0,false],
+  ['Benefício alimentar de parceiros',report.partnerBenefit||0,false],
   ['Estresse ambiental da seca',report.climate,true],
   ['Restrição de habitat pelo pulso',report.hydrology||0,true],
   ['Estresse por oxigênio reduzido',report.waterQuality||0,true]
@@ -356,6 +400,8 @@ function renderDrivers(){
  (report.implicitDiet?' Esta população não tem ligação de consumo: o modelo assume alimentação externa não cadastrada.':'')+
  (opts.flood?.enabled&&report.habitatLabel?' Habitat: <b>'+esc(report.habitatLabel)+'</b> · fator de capacidade pelo pulso: <b>'+fmt(report.habitatCapacity||1)+'×</b>.':'')+
  (bioState&&bioOptions().enabled?' Oxigênio relativo: <b>'+fmt(bioState.oxygen)+'/100</b> · capacidade por qualidade da água: <b>'+fmt(report.waterCapacity||1)+'×</b>.' : '')+
+ (report.interactionCauses?.length?'<br>Interações que contribuíram: '+esc([...new Set(report.interactionCauses)].slice(0,3).join('; '))+'.':'')+
+ (report.indirectPaths?.length?'<br>Efeitos indiretos anotados via: '+esc([...new Set(report.indirectPaths.map(p=>p.mediator))].slice(0,3).join(', '))+'. Não são somados novamente.':'')+
  ' Os valores internos têm decimais; os nós arredondam a abundância para facilitar a leitura.</p>';
  const ranked=simReports.filter(x=>x.role!=='Recurso'&&Math.abs(x.change)>.0005).sort((a,b)=>Math.abs(b.change/Math.max(1,b.before))-Math.abs(a.change/Math.max(1,a.before))).slice(0,3);
  summary.innerHTML=ranked.map(x=>'<div class="sim-why-card"><strong>'+esc(x.name)+' '+(x.change>0?'↑':'↓')+' '+fmt(Math.abs(x.change/Math.max(1,x.before)*100))+'%</strong><small>'+esc(x.reason)+'</small></div>').join('');
