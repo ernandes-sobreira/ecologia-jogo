@@ -108,6 +108,31 @@
     regional:counts.pantanal,general:counts.grupo,outside:counts.outraRegiao,analogies:counts.analogia,
     unclassified:counts.hipotese,sources:refs};
  }
+ const OBSERVATIONS=Object.freeze([
+  {id:'jaguar-prey',sourceId:'jaguarPantanal',label:'Capivaras identificadas como presas de onças',
+   value:'9 registros em 431 carcaças (2,09%)',unit:'frequência observada nos registros do estudo',
+   context:'Pantanal Sul; estudo de onças monitoradas e carcaças de presas (Perilli et al., 2016).',
+   caution:'Frequência de registros NÃO é probabilidade de uma capivara morrer nem coeficiente de predação.'},
+  {id:'tapir-seeds',sourceId:'tapirPantanal',label:'Frugivoria e sementes nas fezes de antas',
+   value:'63 espécies de sementes',unit:'296 amostras fecais em diferentes locais/períodos',
+   context:'Pantanal, fazenda Nhumirim e rios Abobral, Negro e Vermelho (Zorzi, 2009).',
+   caution:'A presença de sementes demonstra ingestão/transporte potencial, não taxa de germinação.'},
+  {id:'bees-flora',sourceId:'beesPantanal',label:'Abelhas e plantas floridas visitadas',
+   value:'56 espécies de abelhas e 63 espécies de plantas',
+   unit:'levantamento de visitas florais ao longo de 12 meses',
+   context:'Campos e bordas de florestas naturais no Pantanal Sul (Boff et al., 2013).',
+   caution:'Visita floral não prova eficiência de polinização de cada espécie da teia.'},
+  {id:'phyto-density',sourceId:'fitoplancton',label:'Abundância fitoplanctônica em habitats distintos',
+   value:'1.428 (rio) a 3.710 (lagoas) ind./mL',
+   unit:'amostras durante águas baixas, com diferenças entre habitats',
+   context:'Comparação de sistemas aquáticos no Pantanal (2012).',
+   caution:'Ind./mL é uma densidade observada; o fitoplâncton do jogo tem índice didático sem unidade de volume.'},
+  {id:'dequada',sourceId:'dequada',label:'Qualidade da água durante dequada',
+   value:'Anoxia (OD próximo de 0 mg/L) e CO₂ livre até 79 mg/L',
+   unit:'condições reportadas no evento de 1995',
+   context:'Rio Paraguai, Pantanal, compilação da Embrapa (1996).',
+   caution:'Não use estes números para interpretar diretamente os índices 0–100 de oxigênio/CO₂ do jogo.'}
+ ]);
  const PARAMETERS=Object.freeze([
   {name:'Reprodução, mortalidade e capacidade de suporte por papel funcional',module:'sim-model.js',example:'r ≈ 0,075–0,13 por passo; mortalidade basal ≈ 0,022–0,036',
     status:'Hipotético',meaning:'Constantes genéricas por função, não taxas específicas estimadas no Pantanal.'},
@@ -122,5 +147,5 @@
   {name:'Decomposição, oxigênio e CO₂',module:'biogeochemistry.js',example:'índices relativos de 0–100; alertas hipotéticos',
     status:'Mecanismo apoiado na literatura; coeficientes hipotéticos',meaning:'Dequada documentada, mas o jogo não calcula concentração em mg/L nem mortalidade observada.'}
  ]);
- return {SOURCES,RULES,STATUS,PARAMETERS,classify,assess};
+ return {SOURCES,RULES,STATUS,PARAMETERS,OBSERVATIONS,classify,assess};
 });
