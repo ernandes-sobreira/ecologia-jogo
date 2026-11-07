@@ -100,8 +100,10 @@
         if(nature==='herbivoria'&&!plant(food)&&food.role!=='Recurso')continue;
         if(nature==='detritivoria'&&!detritus(food))continue;
         if(nature==='necrofagia'&&food.role==='Recurso'&&!/carcaça|restos animais/.test(normalizeName(food)))continue;
-        diet.push({...e,nature,a:food.id,b:consumer.id,weight:w});
-        if(nature==='herbivoria'&&food.role!=='Recurso'){
+        // Backward-compatible: older diagrams stored herbivory as generic 'consumo'.
+        const mechanism=nature==='consumo'&&plant(food)?'herbivoria':nature;
+        diet.push({...e,nature:mechanism,a:food.id,b:consumer.id,weight:w});
+        if(mechanism==='herbivoria'&&food.role!=='Recurso'){
           const n=cap(old[food.id]??food.count,0,1e6),p=ratio(consumer);
           benefit(food.id,'herbivory',n*.023*w*p,'Redução de recrutamento/tecido vegetal por herbivoria');
         }
@@ -125,7 +127,7 @@
       }else if(nature==='polinizacao'){
         const poll=by[e.actorId]||(a.role==='Polinizador'?a:b.role==='Polinizador'?b:b);
         const host=poll.id===a.id?b:a;
-        if(plant(host)&&host.role!=='Recurso'){
+        if(plant(host)&&host.role!=='Recurso'&&Number(state.step||0)>=Math.max(1,lag)){
           const n=cap(old[host.id]??host.count,0,1e6);
           benefit(host.id,'pollination',n*.026*w*ratio(poll,Math.max(1,lag)),
             'Recrutamento potencial por visita de '+poll.name+' (com atraso)');
@@ -135,7 +137,7 @@
       }else if(nature==='dispersao'){
         const disperser=by[e.actorId]||(a.role==='Consumidor'?a:b.role==='Consumidor'?b:b);
         const host=disperser.id===a.id?b:a;
-        if(plant(host)&&host.role!=='Recurso'){
+        if(plant(host)&&host.role!=='Recurso'&&Number(state.step||0)>=Math.max(2,lag)){
           benefit(host.id,'dispersal',cap(old[host.id]??host.count,0,1e6)*.019*w*ratio(disperser,Math.max(2,lag)),
             'Recrutamento potencial pela dispersão por '+disperser.name+' (com atraso)');
         }
