@@ -37,3 +37,10 @@
 .sim-why-card small{font-size:11px;line-height:1.4;color:#658474;display:block;margin-top:4px}
 @media(max-width:960px){.sim-drivers-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.model-param-grid,.sim-factors,.sim-drivers-summary{grid-template-columns:1fr}.sim-explain-head label{width:100%}}
+
+
+#edgeFoodWrap[hidden]{display:none!important}
+#edgeFoodWrap{margin-top:10px;border-top:1px solid #e3ede6;padding-top:11px}
+#edgeFoodWrap select{display:block;width:100%;margin-top:5px}
+#edgeFoodConsumer{display:block;font-size:11px;color:#387250;margin-top:5px;font-weight:600}
+.edge-science-hint{font-size:11px!important;line-height:1.45;color:#6c8573;margin:8px 0;padding:6px 8px;background:#f4f9f3;border-radius:8px}
