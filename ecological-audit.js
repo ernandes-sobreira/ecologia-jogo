@@ -113,9 +113,9 @@
        'Inverta o alimento e o consumidor ou corrija a natureza da ligação.');
      }
      if(e.nature==='consumo'&&producer(food)){
-      add('revisar','plant-predation','Planta em ligação marcada como predação',
-       'A relação '+food.name+' → '+eater.name+' parece herbivoria, e não predação animal.',
-       {edgeId:eid},'Use Herbivoria se o consumidor estiver se alimentando da planta.');
+      add('revisar','plant-predation','Consumo vegetal registrado como predação',
+       'A relação '+food.name+' → '+eater.name+' é provavelmente herbivoria, não caça de animais.',
+       {edgeId:eid},'Use Herbivoria se a fonte alimentar for vegetação ou fitoplâncton.');
      }
     }
    }
@@ -190,13 +190,18 @@
    if(!food)continue;
    const eater=food.id===e.a?by[e.b]:by[e.a];
    if(!eater||resource(eater))continue;
-   const link={foodId:food.id,consumerId:eater.id,nature:e.nature,edgeId:e.id,
+   const mechanism=e.nature==='consumo'&&producer(food)?'herbivoria':e.nature;
+   const link={foodId:food.id,consumerId:eater.id,nature:mechanism,edgeId:e.id,
     source:food.name,destination:eater.name,inferred:inferred.includes(e.id)};
-   if(['detritivoria','necrofagia'].includes(e.nature)||resource(food)){
+   if(mechanism==='consumo'&&producer(eater)){
+    add('revisar','producer-consuming','Produtor registrado como consumidor de animal',
+     eater.name+' aparece consumindo '+food.name+'. Pode haver mixotrofia ou uma inversão de papéis; a classificação precisa ser conferida.',
+     {edgeId:e.id},'Confirme os papéis ecológicos e o alimento registrado.');
+   }
+   if(['detritivoria','necrofagia'].includes(mechanism)||resource(food)){
     detritalEdges.push(link);continue;
    }
-   if(e.nature==='herbivoria'&&!producer(food))continue;
-   if(e.nature==='consumo'&&producer(food))continue;
+   if(mechanism==='herbivoria'&&!producer(food))continue;
    if(!resource(food)&&!resource(eater))trophicEdges.push(link);
   }
   const basal=nodes.filter(producer);
