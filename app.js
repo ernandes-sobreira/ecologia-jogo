@@ -274,13 +274,17 @@ function updateFoodFields(e){
  const titles={consumo:'Quem é o alimento / presa?',herbivoria:'Qual é a planta ou parte vegetal?',
   detritivoria:'Qual é a matéria orgânica morta?',necrofagia:'De qual animal vêm as carcaças?'};
  $('edgeFoodTitle').textContent=titles[e.nature];
- field.innerHTML='<option value="'+esc(e.a)+'">'+esc(a?.name||'Primeiro')+'</option><option value="'+esc(e.b)+'">'+esc(b?.name||'Segundo')+'</option>';
- field.value=e.foodId===e.a||e.foodId===e.b?e.foodId:defaultFoodId(a,b);
- const eater=field.value===e.a?b:a;
- $('edgeFoodConsumer').textContent=(eater?.name?'Quem consome: '+eater.name+'. ':'')+
- (e.nature==='necrofagia'?'Não causa a morte: utiliza carcaças.':
-  e.nature==='detritivoria'?'Exige serapilheira ou outro detrito.':
-  e.nature==='herbivoria'?'A planta pode perder tecido e recrutamento, não morrer automaticamente.':'');
+ field.innerHTML='<option value="">— Confirme quem é o alimento —</option>'+
+  '<option value="'+esc(e.a)+'">'+esc(a?.name||'Primeiro')+'</option>'+
+  '<option value="'+esc(e.b)+'">'+esc(b?.name||'Segundo')+'</option>';
+ field.value=(e.foodId===e.a||e.foodId===e.b)?e.foodId:'';
+ const eater=field.value?(field.value===e.a?b:a):null;
+ $('edgeFoodConsumer').textContent=field.value?
+  (eater?.name?'Quem consome: '+eater.name+'. ':'')+
+  (e.nature==='necrofagia'?'Não causa a morte: utiliza carcaças.':
+   e.nature==='detritivoria'?'Exige serapilheira ou outro detrito.':
+   e.nature==='herbivoria'?'A planta pode perder tecido e recrutamento, não morrer automaticamente.':''):
+  'Escolha explicitamente o alimento ou presa. Sem essa confirmação, a missão não considera a ligação válida.';
 }
 function updateActorFields(e){
  const show=['parasitismo','polinizacao','dispersao'].includes(e.nature);
