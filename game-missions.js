@@ -81,7 +81,13 @@
       explanation:'O artigo não calibra automaticamente coeficientes de reprodução, ataque ou mortalidade do motor do jogo.'}
   ],
   hint:'Abra Auditoria, encontre a ligação de “Decomposição” que conecta organismos incompatíveis e exclua-a. Preserve a cadeia capim → capivara → onça; depois consulte a aba Ciência.'}
- ];
+ ].map(m=>{
+  // Intercale a alternativa adequada entre posições distintas; evitar
+  // que o aluno conclua todas as questões escolhendo sempre a primeira.
+  const order={cadeia:[0,1,2],alternativas:[1,2,0],cheia:[2,0,1],
+    dequada:[0,2,1],ecologo:[1,0,2]}[m.id];
+  return {...m,options:order.map(i=>m.options[i])};
+ });
  const byId=Object.fromEntries(MISSIONS.map(m=>[m.id,m]));
  const food=(edges,nature,prey,consumer)=>{
   return edges.some(e=>e.kind!=='indireta'&&
