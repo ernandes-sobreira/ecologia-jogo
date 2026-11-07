@@ -142,6 +142,47 @@ A aba **Auditoria** também pode ser aberta pelo botão **Avaliar minha teia** (
 
 **Teste reproduzível:** `node tests/auditoria.test.js`, além dos testes das etapas 2 a 5.
 
+## Etapa 7 — proveniência científica e sensibilidade de parâmetros
+
+A nova aba **Ciência** separa duas questões: **a relação ecológica é respaldada por uma fonte?** e **o resultado do modelo depende de coeficientes hipotéticos?** Não se deve interpretar essas duas verificações como calibração científica de campo.
+
+### Matriz de evidências das ligações
+
+O arquivo `scientific-evidence.js` contém **9 fontes científicas verificáveis e 11 regras de correspondência** entre relações dos 44 elementos do catálogo. Toda ligação na teia passa a ser apresentada como:
+
+- **Registrada no Pantanal**: a publicação documenta a relação entre taxa correspondentes na região, mas não fornece necessariamente a taxa usada no jogo. Exemplo: capivara nas presas de onça registrada por Perilli et al. (2016).
+- **Evidência fora do Pantanal**: mecanismo documentado para os organismos em outra região, como o consumo de gramíneas por capivaras em savanas inundáveis da Colômbia.
+- **Mecanismo ou grupo registrado**: a literatura apoia o processo de decomposição ou visitas florais, mas não identifica uma interação quantitativa entre as unidades taxonômicas genéricas do jogo. Exemplo: decomposição bacteriana de material submerso e dequada (Calheiros & Ferreira, 1996).
+- **Analogia regional (par específico não confirmado)**: espécies ou grupos similares foram estudados, mas a fonte não comprova o par exato dos nós do jogo. Exemplo: estudos sobre a traíra *Hoplias malabaricus* consumindo pequenos caracídeos **não comprovam todo “lambari” → toda “traíra”**.
+- **Hipótese sem fonte específica cadastrada**: nenhuma fonte para aquele par e mecanismo existe na base curada do aplicativo. **Isso não significa que a interação seja falsa**.
+- **Não é relação direta avaliada**: relações indiretas precisam de estudo dos elos mediadores, não de uma confirmação bibliográfica automática do par.
+
+O status depende de **quem é o alimento, o parasita ou o dispersor**, não do sentido visual da seta. Inverter biologicamente esses papéis desativa a classificação de relação documentada. O editor da seta também exibe a ficha de evidência e o link do artigo.
+
+**Exemplo científico**: clique em **Carregar exemplo com fontes** na aba Ciência para criar relações com diferentes tipos de respaldo. A ação pede confirmação antes de substituir uma teia existente. Não substitui a teia automaticamente nem invalida projetos anteriores.
+
+### Laboratório de sensibilidade
+
+O arquivo `sensitivity-model.js` executa uma teia em **cópias descartáveis**. É possível escolher um organismo ou índice didático e 10, 20 ou 30 passos. O módulo roda a configuração de referência e muda **um fator de cada vez em −25% e +25%**: reprodução, capacidade de suporte, predação, competição, amplitude de inundação (se ativada) e carga orgânica (se ativada).
+
+A tabela apresenta **índice de abundância relativo ao estado inicial (=100)** para cada variante e o desvio absoluto máximo, em pontos do índice. O maior desvio identifica a **sensibilidade local e condicional** à hipótese testada, não a importância universal do parâmetro na natureza. Em presença de parâmetros com limites de controle, a variação efetiva pode ser inferior a ±25%. A rotina não altera os números, as ligações, o armazenamento local nem os resultados de outras simulações.
+
+As classificações “resposta forte/moderada/pequena” usam cortes visuais e **não são testes estatísticos, intervalos de confiança nem indicadores de calibração**. Parâmetros e taxas permanecem didáticos, não ajustados a séries de abundância, mortalidade, fluxo de matéria, cota ou concentração de oxigênio.
+
+### Estudos integrados à matriz
+
+- Perilli et al. (2016), dieta de onças, Pantanal Sul: https://pmc.ncbi.nlm.nih.gov/articles/PMC4803351/
+- Negrelle (2015), revisão de *Attalea phalerata*: https://doi.org/10.5902/1980509820669
+- Zorzi (2009), frugivoria de antas no Pantanal: https://repositorio.ufms.br/handle/123456789/524
+- Boff, Araujo & Pott (2013), abelhas e flores no Pantanal: https://www.biotaneotropica.org.br/BN/article/view/1240
+- Carvalho et al. (2002), dieta de *Hoplias malabaricus* no Pantanal: https://periodicos.ufjf.br/index.php/zoociencias/article/view/24241
+- Forero-Montaña et al. (2003), dieta de capivaras em savanas inundáveis **da Colômbia**, não do Pantanal: https://pubmed.ncbi.nlm.nih.gov/15162750/
+- Estudo fitoplanctônico do Pantanal (2012): https://doi.org/10.1016/j.limno.2012.01.002
+- Estudo sazonal de *Tetragonopterus argenteus* no Pantanal Norte / Cáceres (2019): https://cienciasambientais.com/index.php/rica/article/view/CBPC2179-6858.2019.004.0016
+- Calheiros & Ferreira (1996), dequada e qualidade da água: https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/792189
+
+**Testes reproduzíveis:** `node tests/evidencias.test.js`, `node tests/sensibilidade.test.js`, além de `node tests/auditoria.test.js`, `node tests/metricas.test.js`, `node tests/interacoes.test.js`, `node tests/pulso.test.js` e `node tests/biogeo.test.js`.
+
 ## Limitações científicas
 A simulação continua conceitual e não foi calibrada com observações de campo. A contagem de elementos não corresponde à riqueza de espécies quando há grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As interações diretas agora têm regras didáticas distintas; efeitos indiretos são registrados como caminhos mediados e não acrescentam forças independentes, para evitar duplicidade. Isso não equivale a um modelo demográfico calibrado para espécies do Pantanal.
 
