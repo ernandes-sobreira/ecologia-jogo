@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id), esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),fmt=x=>Number(x).toLocaleString('pt-BR',{maximumFractionDigits:2});
 const base=[
-['Capim','capim','Produtor',240,50,'Gramíneas do Pantanal'],['Capivara','capivara','Consumidor',8,120,'Herbívoro semiaquático'],['Onça-pintada','onca-pintada','Predador',2,100,'Predador de topo'],['Jacaré','jacare','Predador',4,80,'Jacaré pantaneiro'],['Peixe','peixe','Consumidor',30,18,'Peixe de água doce (representação didática)'],['Minhoca','minhoca','Decompositor',25,2,'Detritívoro do solo'],['Fungos','fungos','Decompositor',12,5,'Grupo de fungos (unidade didática)'],['Musgo','musgo','Produtor',15,1,'Briófitas (unidades de amostragem)'],['Serapilheira','serapilheira','Recurso',0,20,'Matéria orgânica morta'],['Perifíton','perifiton','Comunidade',20,4,'Comunidade aderida a superfícies'],['Líquen','liquen','Comunidade',8,1,'Associação simbiótica'],['Biofilme','biofilme','Comunidade',15,3,'Comunidade microbiana'],['Tuiuiú','tuiuiu','Consumidor',5,25,'Ave símbolo do Pantanal'],['Garça-branca','garca-branca','Consumidor',7,12,'Ave aquática'],['Martim-pescador','martim-pescador','Consumidor',5,2,'Ave piscívora'],['Quati','quati','Consumidor',6,20,'Mamífero onívoro'],['Anta','anta','Consumidor',3,450,'Herbívoro e dispersor'],['Abelha nativa','abelha-nativa','Polinizador',90,1,'Abelha polinizadora (ilustração conceitual)'],['Aguapé florido','aguape-florido','Produtor',25,20,'Macrófita aquática'],['Acuri (palmeira)','acuri-palmeira','Produtor',12,150,'Palmeira de ambientes pantaneiros'],['Frutos de acuri','frutos-acuri','Recurso',0,15,'Recurso alimentar, não espécie'],['Ipê-amarelo','ipe-amarelo','Produtor',5,200,'Árvore florida'],['Cambará','cambara','Produtor',8,250,'Árvore do Pantanal'],['Carandá','caranda','Produtor',6,300,'Palmeira pantaneira'],['Vitória-régia','vitoria-regia','Produtor',12,24,'Planta aquática'],['Mandi','mandi','Consumidor',25,10,'Peixe bagre de água doce'],['Flores','flores','Recurso',0,2,'Estruturas reprodutivas, não espécie'],['Néctar','nectar','Recurso',0,.4,'Recurso para polinizadores'],['Sementes','sementes','Recurso',0,5,'Recurso para dispersores'],['Fitoplâncton','fitoplancton','Comunidade',30,2,'Comunidade planctônica'],
+['Capim','capim','Produtor',240,50,'Gramíneas do Pantanal'],['Capivara','capivara','Consumidor',8,120,'Herbívoro semiaquático'],['Onça-pintada','onca-pintada','Predador',2,100,'Predador de topo'],['Jacaré','jacare','Predador',4,80,'Jacaré pantaneiro'],['Peixe','peixe','Consumidor',30,18,'Peixe de água doce (representação didática)'],['Minhoca','minhoca','Detritívoro',25,2,'Detritívoro do solo; fragmenta matéria orgânica morta'],['Fungos','fungos','Decompositor',12,5,'Grupo de fungos (unidade didática)'],['Musgo','musgo','Produtor',15,1,'Briófitas (unidades de amostragem)'],['Serapilheira','serapilheira','Recurso',0,20,'Matéria orgânica morta'],['Perifíton','perifiton','Comunidade',20,4,'Comunidade aderida a superfícies'],['Líquen','liquen','Comunidade',8,1,'Associação simbiótica'],['Biofilme','biofilme','Comunidade',15,3,'Comunidade microbiana'],['Tuiuiú','tuiuiu','Consumidor',5,25,'Ave símbolo do Pantanal'],['Garça-branca','garca-branca','Consumidor',7,12,'Ave aquática'],['Martim-pescador','martim-pescador','Consumidor',5,2,'Ave piscívora'],['Quati','quati','Consumidor',6,20,'Mamífero onívoro'],['Anta','anta','Consumidor',3,450,'Herbívoro e dispersor'],['Abelha nativa','abelha-nativa','Polinizador',90,1,'Abelha polinizadora (ilustração conceitual)'],['Aguapé florido','aguape-florido','Produtor',25,20,'Macrófita aquática'],['Acuri (palmeira)','acuri-palmeira','Produtor',12,150,'Palmeira de ambientes pantaneiros'],['Frutos de acuri','frutos-acuri','Recurso',0,15,'Recurso alimentar, não espécie'],['Ipê-amarelo','ipe-amarelo','Produtor',5,200,'Árvore florida'],['Cambará','cambara','Produtor',8,250,'Árvore do Pantanal'],['Carandá','caranda','Produtor',6,300,'Palmeira pantaneira'],['Vitória-régia','vitoria-regia','Produtor',12,24,'Planta aquática'],['Mandi','mandi','Consumidor',25,10,'Peixe bagre de água doce'],['Flores','flores','Recurso',0,2,'Estruturas reprodutivas, não espécie'],['Néctar','nectar','Recurso',0,.4,'Recurso para polinizadores'],['Sementes','sementes','Recurso',0,5,'Recurso para dispersores'],['Fitoplâncton','fitoplancton','Comunidade',30,2,'Comunidade planctônica'],
 ['Zooplâncton','zooplancton','Comunidade',120,null,'Microcrustáceos e outros consumidores planctônicos; abundância ilustrativa em unidades de amostragem.'],['Lambari','lambari','Consumidor',25,null,'Peixe pequeno geralmente onívoro; posição trófica depende da dieta e da espécie.'],['Traíra','traira','Predador',4,null,'Peixe predador, principalmente piscívoro quando adulto.'],['Gafanhoto','gafanhoto','Consumidor',36,null,'Inseto herbívoro; recurso para anfíbios e aves insetívoras.'],['Rã','ra','Consumidor',10,null,'Anfíbio; adultos de muitas espécies consomem insetos e outros invertebrados.'],['Bactérias decompositoras','bacterias-decompositoras','Decompositor',90,null,'Microrganismos decompositores; não representam uma única espécie nem indivíduos comparáveis.'],['Caramujo aquático','caramujo-aquatico','Detritívoro',30,null,'Molusco raspador ou detritívoro; a dieta varia conforme a espécie.'],['Sucuri','sucuri','Predador',2,null,'Serpente predadora semiaquática do Pantanal.'],['Lagarta','lagarta','Consumidor',20,null,'Fase larval de lepidóptero; muitas espécies se alimentam de folhas.'],['Larvas de insetos aquáticos','larvas-insetos-aquaticos','Comunidade',65,null,'Conjunto de larvas com dietas distintas: detritívoras, herbívoras e predadoras.'],['Besouro rola-bosta','besouro-rola-bosta','Detritívoro',15,null,'Coleóptero coprófago: alimenta-se e utiliza fezes de vertebrados.'],['Urubu','urubu','Necrófago',5,null,'Ave predominantemente necrófaga; fonte alimentar principal são carcaças.'],['Carrapato','carrapato','Parasita',18,null,'Ectoparasita hematófago; o hospedeiro depende da espécie de carrapato.'],['Gavião','gaviao','Predador',3,null,'Ave de rapina; dieta varia entre espécies de gavião.']
 ].map((s,i)=>({id:'s'+i,name:s[0],slug:s[1],role:s[2],count:s[3],mass:s[4],note:s[5],image:(new Set(['capivara','capim','onca-pintada','jacare','peixe','tuiuiu','garca-branca','martim-pescador','quati','anta']).has(s[1])?'assets/organismos-transparentes/'+s[1]+'.png':'assets/organismos-transparentes/'+s[1]+'.webp'),realisticImage:'assets/organismos-realistas/'+s[1]+'.webp',fallbackImage:'assets/organismos/'+s[1]+(i>=30?'.svg':'.webp')}));
 document.addEventListener('error',function(ev){
@@ -14,6 +14,8 @@ document.addEventListener('error',function(ev){
 },true);
 const colors={Produtor:'#2eaa4b',Consumidor:'#e69b16',Predador:'#d64d40',Decompositor:'#9256af',Polinizador:'#d69d19',Recurso:'#5f9581',Comunidade:'#477f96',Detritívoro:'#99744b',Necrófago:'#745765',Parasita:'#ac4e47'};
 const store='teia-da-vida-pantanal-v3';let graph={nodes:[],edges:[]};try{const saved=JSON.parse(localStorage.getItem(store));if(saved&&Array.isArray(saved.nodes)&&Array.isArray(saved.edges))graph=saved}catch(e){}
+// Migração não destrutiva: correção de uma função ecológica antiga. Os demais campos, nós e ligações são preservados.
+for(const n of graph.nodes){if(n.specId==='s5'&&n.role==='Decompositor')n.role='Detritívoro'}
 let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[],bioState=null,bioReport=null,lastInteractions=null;
 const persist=()=>{try{localStorage.setItem(store,JSON.stringify(graph))}catch(e){}};
 let toastTimer;function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600)}
@@ -26,8 +28,37 @@ function renderLibrary(){let q=$('search').value.trim().toLocaleLowerCase('pt-BR
 function renderCatalog(){ $('catalogGrid').innerHTML=base.map(s=>'<article class="catalog-card"><img src="'+s.image+'" alt="Ilustração de '+esc(s.name)+'"><b>'+esc(s.name)+'</b><span class="role-tag '+roleCss(s.role)+'">'+esc(s.role)+'</span><p>'+esc(s.note)+'</p><button data-addcat="'+s.id+'">Adicionar à teia</button></article>').join('');$('catalogGrid').querySelectorAll('[data-addcat]').forEach(b=>b.onclick=()=>{const s=spec(b.dataset.addcat);addNode(s,.2+Math.random()*.6,.22+Math.random()*.55);switchView('teia')})}
 function selectSpec(s){if(!s)return;preset=s.id;selected=graph.nodes.find(n=>n.specId===s.id)?.id||null;populateControls();renderLibrary()}
 function selectNode(id){const n=nodeById(id);if(!n)return;selected=n.id;preset=n.specId;populateControls();renderLibrary();drawNodes()}
-function populateControls(){const s=spec(preset),n=selected?nodeById(selected):null;$('pickedLabel').textContent=s?.name||'Selecione um organismo';$('nValue').value=n?.count??s?.count??0;$('bValue').value=n?.mass??s?.mass??'';$('roleValue').value=n?.role??s?.role??'Consumidor'}
-function newNode(s,x,y){return {id:'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),specId:s.id,name:s.name,role:s.role,count:s.role==='Recurso'?0:s.count,mass:s.mass,x,y}}
+function identityOf(n,s){return window.TeiaMetrics.resolve(n||{},s||spec(n?.specId)||{})}
+function populateControls(){
+ const s=spec(preset),n=selected?nodeById(selected):null;
+ const d=identityOf(n,s);
+ $('pickedLabel').textContent=s?.name||'Selecione um elemento';
+ $('nValue').value=n?.count??s?.count??0;
+ $('bValue').value=n?.mass??s?.mass??'';
+ $('roleValue').value=n?.role??s?.role??'Consumidor';
+ $('entityTypeValue').value=d.kind;
+ $('unitValue').value=d.unit;
+ $('scientificValue').value=d.scientificName;
+ $('sampleValue').value=d.samplingEffort;
+ updateIdentityHint();
+}
+function updateIdentityHint(){
+ const s=selectedSpec(),kind=$('entityTypeValue').value,unit=$('unitValue').value;
+ const d=window.TeiaMetrics.forSpec(s);
+ const isResource=kind==='recurso'||$('roleValue').value==='Recurso';
+ const summary=d.ecology;
+ $('massFieldLabel').textContent=isResource?'Estoque do recurso (kg)':'Biomassa viva informada (kg)';
+ $('countFieldLabel').textContent=unit==='individuos'?'Indivíduos (N)':unit==='indice'?'Índice didático inicial':unit==='amostras'?'Amostras registradas':unit==='colonias'?'Colônias registradas':unit==='nenhum'?'Sem contagem':'Unidades do modelo';
+ $('nValue').disabled=unit==='nenhum'||isResource;
+ $('ecoIdentityHint').textContent=summary+' · '+(unit==='amostras'||unit==='colonias'?'Registros amostrais permanecem fixos nas simulações.':unit==='indice'||unit==='unidades'?'Unidades-modelo: não representam indivíduos ou número de amostras.':'Números ilustrativos: informe área, época e método para comparar observações.')+
+ (kind==='especie'?' O nome binomial é informado, mas não verificado automaticamente.':'');
+}
+function newNode(s,x,y){
+ const n={id:'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+  specId:s.id,name:s.name,role:s.role,
+  count:s.role==='Recurso'?0:s.count,mass:s.mass,x,y};
+ return window.TeiaMetrics.enrichNode(n,s);
+}
 function addNode(s,x=.25+Math.random()*.5,y=.25+Math.random()*.5){if(!s)return;cancelSimulation();let n=graph.nodes.find(n=>n.specId===s.id);if(n){n.x=x;n.y=y;toast(s.name+' reposicionado')}else{n=newNode(s,x,y);graph.nodes.push(n);toast(s.name+' adicionado')}persist();selectNode(n.id);renderAll()}
 function deleteNode(id){cancelSimulation();graph.nodes=graph.nodes.filter(n=>n.id!==id);graph.edges=graph.edges.filter(e=>e.a!==id&&e.b!==id);if(selected===id)selected=null;if(firstNode===id)firstNode=null;closeEdge();persist();renderAll();toast('Elemento e relações associadas excluídos')}
 function cleanGraph(){if(graph.nodes.length&&!confirm('Criar uma nova teia vazia? Exporte seu trabalho antes, se desejar.'))return;cancelSimulation();graph={nodes:[],edges:[]};selected=null;firstNode=null;closeEdge();persist();renderAll();switchView('teia')}
@@ -93,7 +124,31 @@ function exampleDecomposition(){
  selected=null;persist();renderAll();switchView('simulacoes');
  toast('Exemplo carregado. Compare o oxigênio com diferentes cargas orgânicas e reaeração.');
 }
-function renderStats(){let real=graph.nodes.filter(n=>n.role!=='Recurso');$('statRich').textContent=real.length;$('statN').textContent=fmt(real.reduce((sum,n)=>sum+n.count,0));const ms=graph.nodes.filter(n=>n.mass!==null&&Number.isFinite(Number(n.mass)));$('statBio').textContent=ms.length?fmt(ms.reduce((sum,n)=>sum+Number(n.mass),0)):'—';$('statEdges').textContent=graph.edges.length}
+function renderStats(){
+ const stats=window.TeiaMetrics.analyze(graph.nodes,base);
+ $('statRich').textContent=stats.elements;
+ $('statN').textContent=fmt(stats.individuals);
+ $('statBio').textContent=stats.biomassRows?fmt(stats.biomass):'—';
+ $('statSpecies').textContent=stats.speciesNamed;
+ $('statResources').textContent=stats.resourceCount;
+ $('statEdges').textContent=graph.edges.length;
+}
+function renderEcoDiagnostic(){
+ const stats=window.TeiaMetrics.analyze(graph.nodes,base);
+ const items=Object.entries(stats.counts).filter(([name,count])=>count>0);
+ $('ecoGroups').innerHTML=items.length?items.map(([kind,count])=>
+  '<div class="eco-group"><b>'+count+'</b><span>'+esc(window.TeiaMetrics.TYPES[kind])+'</span></div>').join(''):
+  '<p class="eco-placeholder">Monte uma teia para analisar a identidade ecológica dos seus elementos.</p>';
+ $('ecoNamedSpecies').innerHTML=stats.speciesList.length?
+  '<strong>Espécies com nome científico declarado ('+stats.speciesNamed+')</strong><p>'+
+  stats.speciesList.map(name=>'<i>'+esc(name)+'</i>').join(' · ')+
+  '</p><small>Lista de nomes declarados ou fornecidos no catálogo; não é a riqueza total nem validação taxonômica automática.</small>':
+  '<strong>Espécies identificadas</strong><p>Nenhuma espécie com nome binomial declarado nesta teia. Não é possível calcular S usando apenas nomes genéricos.</p>';
+ $('ecoWarnings').innerHTML=stats.issues.length?
+  '<strong>Cuidados ao interpretar os resultados</strong><ul>'+
+  stats.issues.map(msg=>'<li>'+esc(msg)+'</li>').join('')+'</ul>':'';
+}
+
 function dots(n){if(n.role==='Recurso')return '';let nDots=Math.max(0,Math.min(8,Math.ceil(n.count/Math.max(1,Math.ceil(n.count/8)))));return '<div class="dots" style="--dot:'+(colors[n.role]||'#4d9b64')+'">'+Array.from({length:nDots},()=>'<i></i>').join('')+'</div>'}
 function drawNodes(){$('emptyHint').hidden=graph.nodes.length>0;$('nodesLayer').innerHTML=graph.nodes.map(n=>{let s=spec(n.specId);return '<div class="node'+(selected===n.id?' selected':'')+(firstNode===n.id?' connect-first':'')+'" data-node="'+esc(n.id)+'" tabindex="0" role="button" aria-label="'+esc(n.name)+'"><button class="remove-node" data-delete="'+esc(n.id)+'" aria-label="Excluir '+esc(n.name)+'">×</button><img src="'+(s?.image||'')+'" alt="'+esc(n.name)+'" draggable="false"><b>'+esc(n.name)+'</b><small>'+(n.role==='Recurso'?'Recurso':fmt(n.count)+' unidades')+'</small><small>'+(n.mass===null?'Biomassa não informada':fmt(n.mass)+' kg')+'</small>'+dots(n)+'</div>'}).join('');$('nodesLayer').querySelectorAll('[data-delete]').forEach(el=>{el.onpointerdown=e=>e.stopPropagation();el.onclick=e=>{e.stopPropagation();deleteNode(el.dataset.delete)}});$('nodesLayer').querySelectorAll('[data-node]').forEach(el=>{el.onclick=()=>handleNodeClick(el.dataset.node);el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();handleNodeClick(el.dataset.node)}};el.onpointerdown=e=>{if(e.button!==0||connectMode)return;let n=nodeById(el.dataset.node),dragged=false;if(!n)return;el.setPointerCapture(e.pointerId);el.onpointermove=ev=>{if(!el.hasPointerCapture(ev.pointerId))return;dragged=true;let r=$('webContent').getBoundingClientRect();n.x=Math.max(.07,Math.min(.93,(ev.clientX-r.left)/r.width));n.y=Math.max(.1,Math.min(.9,(ev.clientY-r.top)/r.height));el.style.left=n.x*100+'%';el.style.top=n.y*100+'%';drawEdges()};el.onpointerup=()=>{el.onpointermove=null;if(dragged)persist()};el.onpointercancel=()=>{el.onpointermove=null}};let n=nodeById(el.dataset.node);el.style.left=n.x*100+'%';el.style.top=n.y*100+'%'})}
 function handleNodeClick(id){if(connectMode){if(!firstNode){firstNode=id;$('connectHint').textContent='Agora clique no segundo elemento.';drawNodes();return}if(firstNode===id){firstNode=null;drawNodes();return}let e=graph.edges.find(x=>(x.a===firstNode&&x.b===id)||(x.b===firstNode&&x.a===id));if(!e){e={id:edgeId(),a:firstNode,b:id,direction:'forward',kind:'direta',nature:'consumo',color:'#16834a',weight:.6};graph.edges.push(e)}firstNode=null;connectMode=false;setConnectState();persist();renderAll();openEdge(e.id);return}selectNode(id)}
@@ -185,7 +240,7 @@ function changeEdge(key,value){
 }
 function closeEdge(){edgeSelection=null;$('edgeEditor').hidden=true}
 function deleteEdge(){graph.edges=graph.edges.filter(e=>e.id!==edgeSelection);closeEdge();persist();renderAll();toast('Ligação excluída')}
-function renderAll(){renderStats();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio();renderInteractions()}
+function renderAll(){renderStats();renderEcoDiagnostic();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio();renderInteractions()}
 function attachTile(el){let id=el.dataset.spec;el.onclick=()=>{if(el.dataset.justDragged==='1'){el.dataset.justDragged='0';return}selectSpec(spec(id));addNode(spec(id))};el.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='copy'};el.onpointerdown=ev=>{if(ev.pointerType==='mouse')return;const s=spec(id),ghost=document.createElement('div');ghost.className='drag-ghost';ghost.innerHTML='<img src="'+s.image+'"><b>'+esc(s.name)+'</b>';document.body.appendChild(ghost);function move(e){ghost.style.left=e.clientX+10+'px';ghost.style.top=e.clientY-35+'px';let r=$('board').getBoundingClientRect();$('board').classList.toggle('drop-active',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)}function done(e){const travel=Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY);if(travel>10){el.dataset.justDragged='1';setTimeout(()=>el.dataset.justDragged='0',500)}window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',done);window.removeEventListener('pointercancel',done);ghost.remove();$('board').classList.remove('drop-active');let r=$('board').getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){let c=dropPoint(e);addNode(s,c.x,c.y);switchView('teia')}}move(ev);window.addEventListener('pointermove',move);window.addEventListener('pointerup',done);window.addEventListener('pointercancel',done)}}
 function dropPoint(ev){let r=$('webContent').getBoundingClientRect();return {x:Math.max(.08,Math.min(.92,(ev.clientX-r.left)/r.width)),y:Math.max(.12,Math.min(.88,(ev.clientY-r.top)/r.height))}}
 function exampleNames(){return graph.nodes.map(n=>n.name).join(', ')}
