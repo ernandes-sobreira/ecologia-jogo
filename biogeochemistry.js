@@ -60,6 +60,14 @@
      return {state:stable,report:last,options:opts};
    }
    const source=organicSources(nodes),microbes=microbesPresent(nodes);
+   const nodeMap=Object.fromEntries(nodes.map(n=>[n.id,n]));
+   const decompositionLinks=(Array.isArray(raw.edges)?raw.edges:[]).filter(e=>{
+      if(e.kind==='indireta'||e.nature!=='decomposicao')return false;
+      const a=nodeMap[e.a],b=nodeMap[e.b];if(!a||!b)return false;
+      const decomp=n=>n.role==='Decompositor'||/biofilme/i.test(nameOf(n));
+      const substrate=n=>n.role==='Recurso'&&/serapilheira|folhas|carcaça|fezes|detrito|madeira morta|fruto/i.test(nameOf(n));
+      return (decomp(a)&&substrate(b))||(decomp(b)&&substrate(a));
+   }).length;
    const wet=clamp(flood?.inundated??.35,0,1),connected=clamp(flood?.connectivity??.4,0,1);
    const rising=Math.max(0,wet-clamp(prior.previousFlood??wet,0,1));
    const temperature=.65+opts.temperature/100*.75;
@@ -70,7 +78,7 @@
    const submersionInput=organicFactor*78*rising*(source.vegetation?1.25:1);
    const inputs=clamp(backgroundInput+resourcesInput+submersionInput,0,26);
    const stock=bounded(prior.organic+inputs);
-   const microbeActivity=(opts.microbes/100)*microbes*temperature;
+   const microbeActivity=(opts.microbes/100)*microbes*temperature*(1+.12*Math.min(3,decompositionLinks));
    const aerobicGate=.24+.76*(prior.oxygen/100);
    const decomposed=Math.min(stock,stock*.048*microbeActivity*(.67+.50*wet)*aerobicGate);
    const organic=bounded(stock-decomposed);
@@ -96,6 +104,7 @@
      history:[...prior.history]};
    const report=snapshot(next,{decomposed,inputs,respiration,photosynthesis:photo,
      reaeration,uptake,risk,label,source:flowReason});
+   report.decompositionLinks=decompositionLinks;
    next.history.push(report);
    return {state:next,report,options:opts};
  }
