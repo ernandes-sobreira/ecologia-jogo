@@ -33,6 +33,13 @@
     const by=Object.fromEntries(nodes.map(n=>[n.id,n])),a=by[edge?.a],b=by[edge?.b];
     if(!a||!b||a.id===b.id)return {valid:false,reason:'Selecione dois elementos distintos.'};
     const nature=normalizeNature(edge.nature);
+    if(['competicao','mutualismo','parasitismo'].includes(nature) &&
+       (a.role==='Recurso'||b.role==='Recurso'))
+      return {valid:false,reason:'Esta relação exige dois organismos, não um recurso não vivo.'};
+    if(nature==='decomposicao' &&
+       !((detritus(a)&&(b.role==='Decompositor'||/biofilme/i.test(normalizeName(b))))||
+         (detritus(b)&&(a.role==='Decompositor'||/biofilme/i.test(normalizeName(a))))))
+      return {valid:false,reason:'Decomposição exige detrito e fungo, bactéria ou biofilme decompositor.'};
     if(nature==='herbivoria'){
       const f=by[edge.foodId]|| (plant(a)?a:plant(b)?b:null);
       if(!f||(!plant(f)&&f.role!=='Recurso'))
@@ -53,7 +60,15 @@
     }
     if(nature==='polinizacao'||nature==='dispersao'){
       const actor=by[edge.actorId]||(nature==='polinizacao'?(a.role==='Polinizador'?a:b.role==='Polinizador'?b:null):null);
-      if(!actor)return {valid:false,reason:'Selecione o polinizador ou dispersor.'};
+      if(!actor || actor.role==='Recurso')
+        return {valid:false,reason:'Escolha um organismo (não recurso) como polinizador ou dispersor.'};
+      const host=actor.id===a.id?b:a;
+      if(nature==='polinizacao' &&
+         !plant(host) && !(/flor|néctar/.test(normalizeName(host)) && host.role==='Recurso'))
+        return {valid:false,reason:'Polinização requer uma planta ou estrutura floral.'};
+      if(nature==='dispersao' &&
+         !plant(host) && !(/semente|fruto/.test(normalizeName(host)) && host.role==='Recurso'))
+        return {valid:false,reason:'Dispersão requer uma planta, fruto ou semente como fonte.'};
     }
     return {valid:true,reason:''};
   }
