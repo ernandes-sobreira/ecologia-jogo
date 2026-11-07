@@ -564,7 +564,45 @@ function renderDrivers(){
  const ranked=simReports.filter(x=>x.role!=='Recurso'&&Math.abs(x.change)>.0005).sort((a,b)=>Math.abs(b.change/Math.max(1,b.before))-Math.abs(a.change/Math.max(1,a.before))).slice(0,3);
  summary.innerHTML=ranked.map(x=>'<div class="sim-why-card"><strong>'+esc(x.name)+' '+(x.change>0?'↑':'↓')+' '+fmt(Math.abs(x.change/Math.max(1,x.before)*100))+'%</strong><small>'+esc(x.reason)+'</small></div>').join('');
 }
-function drawChart(){let root=$('chartSvg');if(!root)return;const series=graph.nodes.filter(n=>n.role!=='Recurso').slice(0,7),palette=['#1e9349','#e6a21c','#c64f39','#2888b1','#9356b4','#699b3e','#ad735e'],max=Math.max(1,...series.flatMap(n=>simHistory[n.id]||[n.count]));let out='';for(let j=0;j<=5;j++){const y=320-j*55;out+='<path d="M66 '+y+'H730" stroke="#e0e9e1" stroke-width="1"/><text x="56" y="'+(y+4)+'" text-anchor="end" font-size="12" fill="#627768">'+Math.round(max*j/5)+'</text>'}for(let j=0;j<=6;j++){const x=66+j*110.66;out+='<path d="M'+x+' 44V320" stroke="#edf0ec"/><text x="'+x+'" y="342" text-anchor="middle" font-size="12" fill="#627768">'+j*10+'</text>'}out+='<text x="397" y="367" text-anchor="middle" font-size="13" fill="#4e735a">Tempo (passos)</text><text x="17" y="175" transform="rotate(-90 17 175)" text-anchor="middle" font-size="13" fill="#4e735a">Abundância (N)</text>';series.forEach((n,i)=>{const arr=simHistory[n.id]||[n.count],d=arr.map((v,j)=>(j?'L':'M')+(66+j/60*664).toFixed(2)+' '+(320-v/max*276).toFixed(2)).join(' ');out+='<path d="'+d+'" stroke="'+palette[i]+'" stroke-width="3.1" fill="none" stroke-linecap="round"/>';if(arr.length===1)out+='<circle cx="66" cy="'+(320-arr[0]/max*276)+'" r="4" fill="'+palette[i]+'"/>'});root.innerHTML=out;$('chartLegend').innerHTML=series.map((n,i)=>'<span><i style="background:'+palette[i]+'"></i>'+esc(n.name)+'</span>').join('')}
+function drawChart(){
+ const root=$('chartSvg');if(!root)return;
+ const indexed=graph.nodes.filter(n=>{
+  const d=identityOf(n,spec(n.specId));
+  return d.massNature!=='estoque' && !['amostras','colonias','nenhum'].includes(d.unit) &&
+   Number(simInitial?.[n.id]?.count??n.count)>0;
+ }).slice(0,7);
+ const palette=['#1e9349','#e6a21c','#c64f39','#2888b1','#9356b4','#699b3e','#ad735e'];
+ const series=indexed.map((n,i)=>{
+  const ref=Number(simInitial?.[n.id]?.count??n.count);
+  const values=(simHistory[n.id]||[n.count]).map(value=>window.TeiaMetrics.indexFor(value,ref));
+  return {n,values,color:palette[i]};
+ });
+ const ymax=Math.max(125,Math.ceil(Math.max(100,...series.flatMap(x=>x.values.filter(Number.isFinite)))/25)*25);
+ let out='';
+ for(let j=0;j<=5;j++){
+  const y=320-j*55;
+  out+='<path d="M66 '+y+'H730" stroke="#e0e9e1" stroke-width="1"/><text x="56" y="'+(y+4)+
+   '" text-anchor="end" font-size="12" fill="#627768">'+fmt(ymax*j/5)+'</text>';
+ }
+ for(let j=0;j<=6;j++){
+  const x=66+j*110.66;
+  out+='<path d="M'+x+' 44V320" stroke="#edf0ec"/><text x="'+x+'" y="342" text-anchor="middle" font-size="12" fill="#627768">'+j*10+'</text>';
+ }
+ const y100=320-100/ymax*276;
+ out+='<path d="M66 '+y100+'H730" stroke="#7cae9a" stroke-width="1.4" stroke-dasharray="5 5"/>'+
+ '<text x="397" y="367" text-anchor="middle" font-size="13" fill="#4e735a">Tempo (passos abstratos)</text>'+
+ '<text x="17" y="175" transform="rotate(-90 17 175)" text-anchor="middle" font-size="12" fill="#4e735a">Índice relativo (início = 100)</text>';
+ series.forEach(({n,values,color})=>{
+  const d=values.map((v,j)=>Number.isFinite(v)?
+   (j?'L':'M')+(66+j/60*664).toFixed(2)+' '+(320-v/ymax*276).toFixed(2):'').join(' ');
+  out+='<path d="'+d+'" stroke="'+color+'" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  if(values.length===1)out+='<circle cx="66" cy="'+(320-values[0]/ymax*276)+'" r="4" fill="'+color+'"/>';
+ });
+ root.innerHTML=out;
+ $('chartLegend').innerHTML=series.length?
+  series.map(({n,color})=>'<span><i style="background:'+color+'"></i>'+esc(n.name)+'</span>').join(''):
+  '<span>Adicione elementos com unidades-modelo ou indivíduos e valor inicial positivo. Amostras e colônias não são séries populacionais.</span>';
+}
 function renderTable(){
  const rows=graph.nodes;
  $('simTable').innerHTML=rows.length?
@@ -586,11 +624,33 @@ function renderMini(){
    '</div></div>';
  }).join('');
 }
-function wire(){document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>switchView(b.dataset.nav));document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));$('sidebarToggle').onclick=()=>{const v=$('sidebar').classList.toggle('hidden');document.querySelector('.app').classList.toggle('sidebar-closed',v);setTimeout(drawEdges,70)};$('search').oninput=renderLibrary;let fs=['Todos','Produtor','Consumidores','Decompositor','Detritívoro','Necrófago','Parasita','Polinizador','Comunidade','Recurso'];$('filters').innerHTML=fs.map(f=>'<button data-filter="'+f+'" class="'+(filter===f?'active':'')+'">'+(f==='Consumidores'?'Consumidores':f==='Produtor'?'Produtores':f==='Recurso'?'Recursos':f==='Comunidade'?'Comunidades':f==='Polinizador'?'Polinizadores':f==='Detritívoro'?'Detritívoros':f==='Necrófago'?'Necrófagos':f==='Parasita'?'Parasitas':f)+'</button>').join('');$('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(c=>c.classList.toggle('active',c===b));renderLibrary()});$('addPicked').onclick=()=>{const s=selectedSpec();addNode(s);switchView('teia')};$('updatePicked').onclick=()=>{const n=selected?nodeById(selected):null;if(!n)return toast('Selecione um elemento da teia.');cancelSimulation();n.count=Math.max(0,Math.round(Number($('nValue').value)||0));n.mass=$('bValue').value===''?null:Math.max(0,Number($('bValue').value));n.role=$('roleValue').value;persist();renderAll();toast('Elemento atualizado')};$('deletePicked').onclick=()=>{if(selected)deleteNode(selected)};
+function wire(){document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>switchView(b.dataset.nav));document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));$('sidebarToggle').onclick=()=>{const v=$('sidebar').classList.toggle('hidden');document.querySelector('.app').classList.toggle('sidebar-closed',v);setTimeout(drawEdges,70)};$('search').oninput=renderLibrary;let fs=['Todos','Produtor','Consumidores','Decompositor','Detritívoro','Necrófago','Parasita','Polinizador','Comunidade','Recurso'];$('filters').innerHTML=fs.map(f=>'<button data-filter="'+f+'" class="'+(filter===f?'active':'')+'">'+(f==='Consumidores'?'Consumidores':f==='Produtor'?'Produtores':f==='Recurso'?'Recursos':f==='Comunidade'?'Comunidades':f==='Polinizador'?'Polinizadores':f==='Detritívoro'?'Detritívoros':f==='Necrófago'?'Necrófagos':f==='Parasita'?'Parasitas':f)+'</button>').join('');$('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(c=>c.classList.toggle('active',c===b));renderLibrary()});$('addPicked').onclick=()=>{const s=selectedSpec();addNode(s);switchView('teia')};$('updatePicked').onclick=()=>{
+ const n=selected?nodeById(selected):null;
+ if(!n)return toast('Selecione um elemento da teia.');
+ cancelSimulation();
+ n.role=$('roleValue').value;
+ n.entityType=$('entityTypeValue').value;
+ n.countUnit=$('unitValue').value;
+ n.scientificName=window.TeiaMetrics.normalizeName($('scientificValue').value);
+ n.samplingEffort=window.TeiaMetrics.normalizeName($('sampleValue').value);
+ n.count=Math.max(0,Math.round(Number($('nValue').value)||0));
+ n.mass=$('bValue').value===''?null:Math.max(0,Number($('bValue').value));
+ if(n.entityType==='recurso'||n.role==='Recurso'){
+  n.entityType='recurso';n.role='Recurso';n.countUnit='nenhum';n.count=0;
+ }
+ persist();populateControls();renderAll();
+ if(n.entityType==='especie'&&!window.TeiaMetrics.isBinomial(n.scientificName))
+  toast('Informe o nome científico binomial para contar uma espécie nomeada.');
+ else toast('Unidade, identidade e propriedades atualizadas.');
+};$('deletePicked').onclick=()=>{if(selected)deleteNode(selected)};
+for(const id of ['unitValue','entityTypeValue','roleValue'])$(id).onchange=updateIdentityHint;
 for(let id of ['exampleHome','exampleTeia'])$(id).onclick=example;
 for(let id of ['exampleInteractions','exampleInteractionsTeia'])$(id).onclick=exampleInteractions;for(let id of ['exampleAquatic','exampleAquaticTeia'])$(id).onclick=()=>exampleHabitat('aquatica');for(let id of ['exampleTerrestrial','exampleTerrestrialTeia'])$(id).onclick=()=>exampleHabitat('terrestre');$('startBlank').onclick=cleanGraph;$('clearTeia').onclick=cleanGraph;$('connectMode').onclick=()=>{connectMode=!connectMode;firstNode=null;setConnectState();drawNodes()};$('board').ondragover=e=>{e.preventDefault();$('board').classList.add('drop-active')};$('board').ondragleave=()=>$('board').classList.remove('drop-active');$('board').ondrop=e=>{e.preventDefault();$('board').classList.remove('drop-active');let s=spec(e.dataTransfer.getData('text/plain'));if(s){const p=dropPoint(e);addNode(s,p.x,p.y);switchView('teia')}};$('arrangeNodes').onclick=()=>{graph.nodes.forEach((n,i)=>{n.x=.18+(i%4)*.21;n.y=.22+Math.floor(i/4)*.22});persist();renderAll()};$('zoomMinus').onclick=()=>{zoom=Math.max(.8,zoom-.05);$('webContent').style.transform='scale('+zoom+')'};$('zoomPlus').onclick=()=>{zoom=Math.min(1.15,zoom+.05);$('webContent').style.transform='scale('+zoom+')'};
 $('edgeActor').onchange=e=>changeEdge('actorId',e.target.value);$('edgeDirection').onchange=e=>changeEdge('direction',e.target.value);$('edgeKind').onchange=e=>changeEdge('kind',e.target.value);$('edgeNature').onchange=e=>changeEdge('nature',e.target.value);$('edgeFood').onchange=e=>changeEdge('foodId',e.target.value);$('edgeColor').oninput=e=>changeEdge('color',e.target.value);$('edgeWeight').oninput=e=>{let w=Number(e.target.value);changeEdge('weight',w);$('edgeWeightOut').textContent=fmt(w)};document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{$('edgeColor').value=b.dataset.color;changeEdge('color',b.dataset.color)});$('closeEdge').onclick=closeEdge;$('doneEdge').onclick=closeEdge;$('deleteEdge').onclick=deleteEdge;
-for(let id of ['exportTop'])$(id).onclick=download;const importButton=document.createElement('button');importButton.textContent='Importar JSON';importButton.id='importJson';importButton.onclick=()=>file.click();document.querySelector('.top-actions').appendChild(importButton);const file=document.createElement('input');file.type='file';file.accept='.json,application/json';file.hidden=true;file.onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.nodes)||!Array.isArray(x.edges))throw Error();cancelSimulation();graph={nodes:x.nodes.filter(n=>spec(n.specId)),edges:x.edges};persist();renderAll();switchView('teia');toast('Teia importada')}catch(err){toast('Arquivo JSON inválido')}file.value=''};document.body.appendChild(file);
+for(let id of ['exportTop'])$(id).onclick=download;const importButton=document.createElement('button');importButton.textContent='Importar JSON';importButton.id='importJson';importButton.onclick=()=>file.click();document.querySelector('.top-actions').appendChild(importButton);const file=document.createElement('input');file.type='file';file.accept='.json,application/json';file.hidden=true;file.onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.nodes)||!Array.isArray(x.edges))throw Error();cancelSimulation();graph={nodes:x.nodes.filter(n=>spec(n.specId)).map(n=>{
+ if(n.specId==='s5'&&n.role==='Decompositor')n.role='Detritívoro';
+ return n;
+ }),edges:x.edges};persist();renderAll();switchView('teia');toast('Teia importada')}catch(err){toast('Arquivo JSON inválido')}file.value=''};document.body.appendChild(file);
 for(const id of ['bioEnabled','bioLoad','bioMicrobes','bioAeration','bioTemperature']){
  const el=$(id);
  if(el)el.onchange=resetSim;
