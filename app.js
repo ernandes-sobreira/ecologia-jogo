@@ -80,15 +80,62 @@ function defaultFoodId(a,b){
  const rank=n=>{let name=String(n.name||'').toLowerCase();if(n.role==='Recurso')return 0;if(n.role==='Produtor'||name.includes('fitoplâncton')||name.includes('perifíton')||name.includes('líquen'))return 1;if(n.role==='Predador')return 4;if(n.role==='Necrófago'||n.role==='Parasita')return 3;return 2};
  return rank(a)<=rank(b)?a.id:b.id;
 }
-function updateFoodFields(e){
- if(!e)return;
- const a=nodeById(e.a),b=nodeById(e.b),field=$('edgeFood');
- $('edgeFoodWrap').hidden=e.nature!=='consumo';
- field.innerHTML='<option value="'+esc(e.a)+'">'+esc(a?.name||'Origem')+'</option><option value="'+esc(e.b)+'">'+esc(b?.name||'Destino')+'</option>';
- field.value=e.foodId===e.a||e.foodId===e.b?e.foodId:defaultFoodId(a,b);
- const consumer=field.value===e.a?b:a;
- $('edgeFoodConsumer').textContent=consumer?.name?'Quem consome: '+consumer.name:'';
+function actorDefault(e){
+ const a=nodeById(e.a),b=nodeById(e.b);
+ if(e.nature==='parasitismo')return a?.role==='Parasita'?a.id:b?.role==='Parasita'?b.id:e.b;
+ if(e.nature==='polinizacao')return a?.role==='Polinizador'?a.id:b?.role==='Polinizador'?b.id:e.b;
+ if(e.nature==='dispersao'){
+  if(a?.role==='Consumidor'&&b?.role==='Produtor')return a.id;
+  if(b?.role==='Consumidor'&&a?.role==='Produtor')return b.id;
+ }
+ return e.b;
 }
+function updateFoodFields(e){
+ const a=nodeById(e.a),b=nodeById(e.b),field=$('edgeFood');
+ const eligible=['consumo','herbivoria','detritivoria','necrofagia'].includes(e.nature);
+ $('edgeFoodWrap').hidden=!eligible;if(!eligible)return;
+ const titles={consumo:'Quem é o alimento / presa?',herbivoria:'Qual é a planta ou parte vegetal?',
+  detritivoria:'Qual é a matéria orgânica morta?',necrofagia:'De qual animal vêm as carcaças?'};
+ $('edgeFoodTitle').textContent=titles[e.nature];
+ field.innerHTML='<option value="'+esc(e.a)+'">'+esc(a?.name||'Primeiro')+'</option><option value="'+esc(e.b)+'">'+esc(b?.name||'Segundo')+'</option>';
+ field.value=e.foodId===e.a||e.foodId===e.b?e.foodId:defaultFoodId(a,b);
+ const eater=field.value===e.a?b:a;
+ $('edgeFoodConsumer').textContent=(eater?.name?'Quem consome: '+eater.name+'. ':'')+
+ (e.nature==='necrofagia'?'Não causa a morte: utiliza carcaças.':
+  e.nature==='detritivoria'?'Exige serapilheira ou outro detrito.':
+  e.nature==='herbivoria'?'A planta pode perder tecido e recrutamento, não morrer automaticamente.':'');
+}
+function updateActorFields(e){
+ const show=['parasitismo','polinizacao','dispersao'].includes(e.nature);
+ $('edgeActorWrap').hidden=!show;if(!show)return;
+ const a=nodeById(e.a),b=nodeById(e.b),field=$('edgeActor');
+ const name={parasitismo:'Quem é o parasita?',polinizacao:'Quem poliniza?',dispersao:'Quem dispersa as sementes?'};
+ const help={parasitismo:'O hospedeiro sofre custo; o parasita pode ganhar recursos.',
+  polinizacao:'A visita pode beneficiar o polinizador e o recrutamento da planta com atraso.',
+  dispersao:'O benefício de recrutamento vegetal é representado com atraso.'};
+ $('edgeActorTitle').textContent=name[e.nature];
+ field.innerHTML='<option value="'+esc(e.a)+'">'+esc(a?.name||'Primeiro')+'</option><option value="'+esc(e.b)+'">'+esc(b?.name||'Segundo')+'</option>';
+ field.value=e.actorId===e.a||e.actorId===e.b?e.actorId:actorDefault(e);
+ $('edgeActorHelp').textContent=help[e.nature];
+}
+function updateMechanismHint(e){
+ const note={consumo:'Predação: morte potencial da presa e alimento para o predador.',
+  herbivoria:'Herbivoria: recurso vegetal para o herbívoro; perda de tecido/recrutamento na planta.',
+  detritivoria:'Detritivoria: uso de matéria morta, sem matar organismos vivos.',
+  necrofagia:'Necrofagia: acesso a carcaças geradas por mortalidade, não predação direta.',
+  competicao:'Competição (−/−): custos para os dois participantes.',
+  parasitismo:'Parasitismo (+/−): escolha parasita e hospedeiro.',
+  mutualismo:'Mutualismo (+/+): benefícios limitados a ambos os parceiros.',
+  polinizacao:'Polinização: recursos florais e recrutamento potencial com atraso.',
+  dispersao:'Dispersão: recrutamento vegetal potencial com atraso.',
+  decomposicao:'Decomposição: ciclagem de matéria e efeitos limnológicos da etapa 3.',
+  outro:'Outra: anotação visual sem efeito calculado.'};
+ $('edgeMechanismHint').textContent=(e.kind==='indireta'?
+  'Indireta: uma hipótese de efeito mediado por outros organismos; não soma força extra. ':'')+
+  (note[e.nature]||'Escolha a relação.')+
+  ' O sentido gráfico da seta NÃO altera os papéis ecológicos.';
+}
+function updateEdgeFields(e){updateFoodFields(e);updateActorFields(e);updateMechanismHint(e);}
 function openEdge(id){
  edgeSelection=id;const e=graph.edges.find(x=>x.id===id);if(!e)return;
  const a=nodeById(e.a),b=nodeById(e.b);
@@ -100,15 +147,17 @@ function openEdge(id){
  $('edgeWeight').value=e.weight??.6;
  $('edgeWeightOut').textContent=fmt(e.weight??.6);
  $('edgeColor').value=e.color||'#16834a';
- updateFoodFields(e);$('edgeEditor').hidden=false;
+ updateEdgeFields(e);$('edgeEditor').hidden=false;
 }
 function changeEdge(key,value){
  const e=graph.edges.find(x=>x.id===edgeSelection);if(!e)return;
- if(['kind','nature','weight','foodId'].includes(key))cancelSimulation();
+ const ecological=['kind','nature','weight','foodId','actorId'].includes(key);
+ if(ecological)cancelSimulation();
  e[key]=value;
- if(key==='nature'||key==='foodId')updateFoodFields(e);
+ if(key==='nature')e.actorId=actorDefault(e);
+ if(['kind','nature','foodId','actorId'].includes(key))updateEdgeFields(e);
  persist();drawEdges();
- if(['kind','nature','weight','foodId'].includes(key))renderAll();
+ if(ecological)renderAll();
 }
 function closeEdge(){edgeSelection=null;$('edgeEditor').hidden=true}
 function deleteEdge(){graph.edges=graph.edges.filter(e=>e.id!==edgeSelection);closeEdge();persist();renderAll();toast('Ligação excluída')}
@@ -316,7 +365,7 @@ function renderTable(){const rows=graph.nodes.filter(n=>n.role!=='Recurso');$('s
 function renderMini(){$('miniNodes').innerHTML=graph.nodes.slice(0,10).map(n=>{let s=spec(n.specId);return '<div class="mini-card"><img src="'+(s?.image||'')+'" alt=""><b>'+esc(n.name)+'</b><div>N: '+fmt(n.count)+'</div></div>'}).join('')}
 function wire(){document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>switchView(b.dataset.nav));document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));$('sidebarToggle').onclick=()=>{const v=$('sidebar').classList.toggle('hidden');document.querySelector('.app').classList.toggle('sidebar-closed',v);setTimeout(drawEdges,70)};$('search').oninput=renderLibrary;let fs=['Todos','Produtor','Consumidores','Decompositor','Detritívoro','Necrófago','Parasita','Polinizador','Comunidade','Recurso'];$('filters').innerHTML=fs.map(f=>'<button data-filter="'+f+'" class="'+(filter===f?'active':'')+'">'+(f==='Consumidores'?'Consumidores':f==='Produtor'?'Produtores':f==='Recurso'?'Recursos':f==='Comunidade'?'Comunidades':f==='Polinizador'?'Polinizadores':f==='Detritívoro'?'Detritívoros':f==='Necrófago'?'Necrófagos':f==='Parasita'?'Parasitas':f)+'</button>').join('');$('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(c=>c.classList.toggle('active',c===b));renderLibrary()});$('addPicked').onclick=()=>{const s=selectedSpec();addNode(s);switchView('teia')};$('updatePicked').onclick=()=>{const n=selected?nodeById(selected):null;if(!n)return toast('Selecione um elemento da teia.');cancelSimulation();n.count=Math.max(0,Math.round(Number($('nValue').value)||0));n.mass=$('bValue').value===''?null:Math.max(0,Number($('bValue').value));n.role=$('roleValue').value;persist();renderAll();toast('Elemento atualizado')};$('deletePicked').onclick=()=>{if(selected)deleteNode(selected)};
 for(let id of ['exampleHome','exampleTeia'])$(id).onclick=example;for(let id of ['exampleAquatic','exampleAquaticTeia'])$(id).onclick=()=>exampleHabitat('aquatica');for(let id of ['exampleTerrestrial','exampleTerrestrialTeia'])$(id).onclick=()=>exampleHabitat('terrestre');$('startBlank').onclick=cleanGraph;$('clearTeia').onclick=cleanGraph;$('connectMode').onclick=()=>{connectMode=!connectMode;firstNode=null;setConnectState();drawNodes()};$('board').ondragover=e=>{e.preventDefault();$('board').classList.add('drop-active')};$('board').ondragleave=()=>$('board').classList.remove('drop-active');$('board').ondrop=e=>{e.preventDefault();$('board').classList.remove('drop-active');let s=spec(e.dataTransfer.getData('text/plain'));if(s){const p=dropPoint(e);addNode(s,p.x,p.y);switchView('teia')}};$('arrangeNodes').onclick=()=>{graph.nodes.forEach((n,i)=>{n.x=.18+(i%4)*.21;n.y=.22+Math.floor(i/4)*.22});persist();renderAll()};$('zoomMinus').onclick=()=>{zoom=Math.max(.8,zoom-.05);$('webContent').style.transform='scale('+zoom+')'};$('zoomPlus').onclick=()=>{zoom=Math.min(1.15,zoom+.05);$('webContent').style.transform='scale('+zoom+')'};
-$('edgeDirection').onchange=e=>changeEdge('direction',e.target.value);$('edgeKind').onchange=e=>changeEdge('kind',e.target.value);$('edgeNature').onchange=e=>changeEdge('nature',e.target.value);$('edgeFood').onchange=e=>changeEdge('foodId',e.target.value);$('edgeColor').oninput=e=>changeEdge('color',e.target.value);$('edgeWeight').oninput=e=>{let w=Number(e.target.value);changeEdge('weight',w);$('edgeWeightOut').textContent=fmt(w)};document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{$('edgeColor').value=b.dataset.color;changeEdge('color',b.dataset.color)});$('closeEdge').onclick=closeEdge;$('doneEdge').onclick=closeEdge;$('deleteEdge').onclick=deleteEdge;
+$('edgeActor').onchange=e=>changeEdge('actorId',e.target.value);$('edgeDirection').onchange=e=>changeEdge('direction',e.target.value);$('edgeKind').onchange=e=>changeEdge('kind',e.target.value);$('edgeNature').onchange=e=>changeEdge('nature',e.target.value);$('edgeFood').onchange=e=>changeEdge('foodId',e.target.value);$('edgeColor').oninput=e=>changeEdge('color',e.target.value);$('edgeWeight').oninput=e=>{let w=Number(e.target.value);changeEdge('weight',w);$('edgeWeightOut').textContent=fmt(w)};document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{$('edgeColor').value=b.dataset.color;changeEdge('color',b.dataset.color)});$('closeEdge').onclick=closeEdge;$('doneEdge').onclick=closeEdge;$('deleteEdge').onclick=deleteEdge;
 for(let id of ['exportTop'])$(id).onclick=download;const importButton=document.createElement('button');importButton.textContent='Importar JSON';importButton.id='importJson';importButton.onclick=()=>file.click();document.querySelector('.top-actions').appendChild(importButton);const file=document.createElement('input');file.type='file';file.accept='.json,application/json';file.hidden=true;file.onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.nodes)||!Array.isArray(x.edges))throw Error();cancelSimulation();graph={nodes:x.nodes.filter(n=>spec(n.specId)),edges:x.edges};persist();renderAll();switchView('teia');toast('Teia importada')}catch(err){toast('Arquivo JSON inválido')}file.value=''};document.body.appendChild(file);
 for(const id of ['bioEnabled','bioLoad','bioMicrobes','bioAeration','bioTemperature']){
  const el=$(id);
