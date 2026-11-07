@@ -154,7 +154,7 @@
     for(const n of nodes){
       const id=n.id, N=old[id],role=roleOf(n),rated=RATE[role]||RATE.Outro;
       const eco=effects[id]||{};
-      if(role==='Recurso'){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Recurso sem contagem de indivíduos: não simulado nesta etapa.',capacity:null,food:null,laggedFood:null,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:null,herbivory:0,explicitCompetition:0,parasitism:0,mutualism:0,pollination:0,dispersal:0}});continue;}
+      if(role==='Recurso'){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Recurso sem contagem de indivíduos: não simulado nesta etapa.',capacity:null,food:null,laggedFood:null,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:null,herbivory:0,explicitCompetition:0,parasitism:0,mutualism:0,pollination:0,dispersal:0});continue;}
       const f=currentFood[id],hist=foodHistory[id];
       const idx=Math.max(0,hist.length-1-opts.lag);
       const lagged=opts.lag===0?f:hist[idx];
@@ -173,7 +173,7 @@
       // A capacidade de suporte de consumidores diminui com alimentos disponíveis,
       // após um atraso demográfico editável.
       if(role!=='Produtor' && (foodsByConsumer[id]||[]).length)K*=minmax(.30+.70*food,.30,1.3);
-      if(N<=0){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Extinto na simulação: sem recrutamento externo.',capacity:K,food:f,laggedFood:food,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:h.label||null,herbivory:0,explicitCompetition:0,parasitism:0,mutualism:0,pollination:0,dispersal:0}});continue;}
+      if(N<=0){next[id]=0;reports.push({id,name:n.name,role,before:0,after:0,change:0,reason:'Extinto na simulação: sem recrutamento externo.',capacity:K,food:f,laggedFood:food,births:0,natural:0,density:0,starvation:0,competition:0,predation:0,climate:0,hydrology:0,waterQuality:0,habitatLabel:h.label||null,herbivory:0,explicitCompetition:0,parasitism:0,mutualism:0,pollination:0,dispersal:0});continue;}
       const birthFood=role==='Produtor'?1:minmax(.20+.80*food,.05,1.25);
       const births=N*rated.r*opts.reproduction*birthFood*Math.max(0,1-N/Math.max(1,K));
       const natural=N*rated.m;
