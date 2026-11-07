@@ -72,8 +72,33 @@ A aba **Simulações** oferece um laboratório de `Matéria orgânica → decomp
 
 **Testes reproduzíveis:** `node tests/biogeo.test.js` e `node tests/pulso.test.js`.
 
+## Etapa 4 — relações ecológicas com mecanismos diferentes
+
+Na aba **Teia da Vida**, clique **Criar ligação**, selecione dois nós e, no editor da seta, escolha a **natureza ecológica**, o **papel dos participantes**, o **peso** e se a relação é **direta** ou **indireta**. O sentido e a cor da seta são opções visuais e **não** trocam as funções biológicas.
+
+- **Predação / consumo animal (+/−):** reduz a população da presa; o consumidor obtém acesso alimentar. Quem é consumido deve ser explicitado em *Alimento/presa*.
+- **Herbivoria (+/−):** o consumidor obtém alimento vegetal; a planta pode perder tecido ou recrutamento no modelo. Não é tratada como morte imediata de cada árvore ou capim.
+- **Competição (−/−):** gera custos para ambos, conforme suas abundâncias relativas e o peso. O modelo também reconhece competição por alimento compartilhado, evitando aplicar duas penalizações ao mesmo par.
+- **Parasitismo (+/−):** escolha *Quem é o parasita?*; representa custo ao hospedeiro e benefício dependente de hospedeiros ao parasita. Não equivale à predação instantânea.
+- **Mutualismo (+/+):** benefícios limitados e dependentes da presença dos dois parceiros; não são garantias de que qualquer associação seja mutualística.
+- **Polinização:** escolha *Quem poliniza?*; pode beneficiar recursos dos polinizadores e o **recrutamento potencial** da planta, após atraso configurado. Não representa produção imediata de árvores adultas.
+- **Dispersão:** escolha *Quem dispersa?*; o animal pode receber recursos alimentares e a planta obter maior recrutamento potencial após atraso (mínimo de 2 passos).
+- **Detritivoria:** alimentação sobre material orgânico morto, **sem morte de organismo vivo**; pode aumentar a disponibilidade energética do detritívoro e facilitar a fragmentação que altera a decomposição microbiana.
+- **Necrofagia:** o urubu ou outro necrófago utiliza carcaças originadas na mortalidade de vertebrados. O consumo das carcaças **não acrescenta mortes** à população de origem. A oferta é aproximada pelas perdas demográficas do passo anterior.
+- **Decomposição:** ligada ao módulo `biogeochemistry.js`, que modela matéria orgânica, nutrientes e índices relativos de oxigênio e CO₂. Não é o mesmo que detritivoria.
+- **Relação indireta:** desenhada por linha tracejada e tratada como hipótese mediada. Quando há um caminho de dois elos diretos, o painel indica o organismo mediador. **Não é adicionada uma força independente**, para evitar contar duas vezes a mesma cascata.
+- **Outra:** anotação visual sem efeito calculado.
+
+Use o botão **Interações ecológicas** no painel ou **Interações** na teia para carregar um exemplo contendo herbivoria, predação, parasitismo, polinização, dispersão, competição, decomposição e um caminho indireto. Em **Simulações → O que cada interação faz?**, examine mecanismos ativos, relações inválidas e mediações. Em **Por que as populações mudaram?**, os processos aparecem em parcelas separadas.
+
+**Limitações:** sinais (+/−) são classificações conceituais gerais, mas respostas empíricas podem variar com espécie, estágio, estação e contexto. O modelo não calibra parâmetros por espécie nem estima taxas de predação, parasitismo, fecundidade, germinação ou dispersão medidas no Pantanal. Os passos são abstratos e os valores de abundância e biomassa iniciais continuam ilustrativos. Relações indiretas são analisadas por caminhos simples de dois elos e efeitos dinâmicos transmitidos pelas diretas; redes complexas exigiriam modelagem específica.
+
+**Leituras de referência:** Stevens (2010), [Predation, Herbivory, and Parasitism](https://www.nature.com/scitable/knowledge/library/predation-herbivory-and-parasitism-13261134/); [Population ecology](https://doi.org/10.1036/1097-8542.538150); [Simple Mechanisms of Plant Reproductive Benefits Yield Different Dynamics in Pollination and Seed Dispersal Mutualisms](https://pubmed.ncbi.nlm.nih.gov/35905405/); Rogers et al. (2021), [Cascading Impacts of Seed Disperser Loss](https://www.annualreviews.org/content/journals/10.1146/annurev-ecolsys-012221-111742); [parasitism meta-analysis](https://pmc.ncbi.nlm.nih.gov/articles/PMC10099232/).
+
+**Testes reproduzíveis:** `node tests/interacoes.test.js`, `node tests/pulso.test.js` e `node tests/biogeo.test.js`.
+
 ## Limitações científicas
-A simulação continua conceitual e não foi calibrada com observações de campo. A etiqueta "elementos biológicos" não é riqueza de espécies quando se incluem grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As simulações dinâmicas representam principalmente ligações diretas de consumo; decomposição, parasitismo, polinização e relações indiretas podem ser desenhadas, mas não são modeladas como processos demográficos específicos.
+A simulação continua conceitual e não foi calibrada com observações de campo. A etiqueta "elementos biológicos" não é riqueza de espécies quando se incluem grupos, comunidades, associações ou táxons genéricos. A serapilheira, flores, frutos, néctar e sementes são recursos, não organismos individuais. As abundâncias e biomassas iniciais são ilustrativas e editáveis; não representam estimativas reais. Os novos elementos foram cadastrados com biomassa não informada até o estudante atribuir um valor. Grupos como zooplâncton, larvas aquáticas e bactérias decompositoras não são uma única espécie; por isso as suas unidades de contagem precisam ser definidas conforme o método de amostragem. Exemplos mostram relações possíveis, cuja ocorrência local depende de espécies e condições. As interações diretas agora têm regras didáticas distintas; efeitos indiretos são registrados como caminhos mediados e não acrescentam forças independentes, para evitar duplicidade. Isso não equivale a um modelo demográfico calibrado para espécies do Pantanal.
 
 ## Privacidade
 Os dados ficam no próprio navegador (localStorage), sem servidor, login ou compartilhamento automático. Exporte seu JSON para fazer cópias.
