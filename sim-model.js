@@ -226,7 +226,7 @@
         [bioticGains,'benefícios ecológicos e recrutamento potencial']
       ].filter(x=>x[0]>.005).sort((a,b)=>b[0]-a[0]);
       const mainLoss=causes.filter(c=>!['reprodução','benefícios ecológicos e recrutamento potencial'].includes(c[1]))[0];
-      const reason= delta>0.005?'Cresceu: reprodução e benefícios ecológicos superaram as perdas'+(food>1.05?' com maior oferta alimentar':'')+'.':
+      const reason= delta>0.005?'Cresceu: '+(bioticGains>.005?'reprodução e benefícios ecológicos':'reprodução')+' superaram as perdas'+(food>1.05?' com maior oferta alimentar':'')+'.':
         delta<-.005?'Diminuiu sobretudo por '+(mainLoss?.[1]||'perdas demográficas')+'.':
         'Permaneceu quase estável: ganhos e perdas próximos.';
       reports.push({id,name:n.name,role,before:N,after:result,change:result-N,reason,capacity:K,food:f,laggedFood:food,births,natural,density,starvation,competition,predation,herbivory,explicitCompetition,parasitism,mutualism,pollination,dispersal,partnerBenefit,bioticGains,interactionCauses:eco.causes||[],indirectPaths:eco.indirectPaths||[],climate,
