@@ -151,7 +151,8 @@
      x.code==='resource-eater'||x.code==='self-link').length;
    const claims=context.evidence?.assessments||[];
    const supported=claims.some(x=>x.status==='pantanal'&&
-     [x.a,x.b].includes('Capivara')&&[x.a,x.b].includes('Onça-pintada'));
+     edges.some(e=>e.id===x.edgeId&&
+       [e.a,e.b].includes(loc('capivara'))&&[e.a,e.b].includes(loc('onca-pintada'))));
    objectives=[
     obj('Teia contém cadeia alimentar confirmada',!!loc('capim')&&!!loc('capivara')&&!!loc('onca-pintada')&&
       food(edges,'consumo',loc('capivara'),loc('onca-pintada')),
@@ -217,7 +218,7 @@
   }
   return {nodes,edges};
  }
- function initialProgress(){return {version:8,completed:[],active:null,answers:{},started:[]};}
+ function initialProgress(){return {version:8,completed:[],active:null,presetActive:null,answers:{},started:[]};}
  function normalizeProgress(value){
   const p=initialProgress();
   if(!value||typeof value!=='object')return p;
@@ -225,6 +226,7 @@
   p.completed=Array.isArray(value.completed)?[...new Set(value.completed.filter(x=>ids.has(x)))]:[];
   p.started=Array.isArray(value.started)?[...new Set(value.started.filter(x=>ids.has(x)))]:[];
   p.active=ids.has(value.active)?value.active:null;
+  p.presetActive=ids.has(value.presetActive)?value.presetActive:null;
   p.answers={};
   if(value.answers&&typeof value.answers==='object'){
    for(const m of MISSIONS){
