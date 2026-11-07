@@ -20,12 +20,12 @@ for(const n of graph.nodes){
  if(n.specId==='s29'&&n.role==='Comunidade')n.role='Produtor';
  if(n.specId==='s30'&&n.role==='Comunidade')n.role='Consumidor';
 }
-let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[],bioState=null,bioReport=null,lastInteractions=null,auditSnapshot=null;
+let current='painel',selected=null,preset='s1',filter='Todos',connectMode=false,firstNode=null,edgeSelection=null,zoom=1,simTimer=null,simStep=0,simInitial=null,simHistory={},simSnapshot=null,simModelState=null,simReports=[],bioState=null,bioReport=null,lastInteractions=null,auditSnapshot=null,sensitivityReport=null,sensitivitySignature=null;
 const persist=()=>{try{localStorage.setItem(store,JSON.stringify(graph))}catch(e){}};
 let toastTimer;function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600)}
 function nodeById(id){return graph.nodes.find(n=>n.id===id)}function spec(id){return base.find(s=>s.id===id)}function edgeId(){return 'e'+Date.now()+Math.random().toString(36).slice(2,7)}
 function selectedSpec(){return spec(preset)}
-function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(()=>{drawEdges();renderFlood()});if(view==='simulacoes')requestAnimationFrame(()=>{drawChart();renderFlood();renderBio()});if(view==='auditoria')renderAudit();window.scrollTo({top:0,behavior:'instant'})}
+function switchView(view){current=view;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));if(view==='teia')requestAnimationFrame(()=>{drawEdges();renderFlood()});if(view==='simulacoes')requestAnimationFrame(()=>{drawChart();renderFlood();renderBio()});if(view==='auditoria')renderAudit();if(view==='validacao')renderEvidence();window.scrollTo({top:0,behavior:'instant'})}
 function roleCss(role){return /^[\wÀ-ÿ ]+$/.test(role)?role:'Outro'}
 function itemTile(s){
  const d=window.TeiaMetrics.forSpec(s);
@@ -306,7 +306,7 @@ function updateMechanismHint(e){
   (note[e.nature]||'Escolha a relação.')+
   ' O sentido gráfico da seta NÃO altera os papéis ecológicos.';
 }
-function updateEdgeFields(e){updateFoodFields(e);updateActorFields(e);updateMechanismHint(e);}
+function updateEdgeFields(e){updateFoodFields(e);updateActorFields(e);updateMechanismHint(e);renderEdgeEvidence(e);}
 function openEdge(id){
  edgeSelection=id;const e=graph.edges.find(x=>x.id===id);if(!e)return;
  const a=nodeById(e.a),b=nodeById(e.b);
@@ -448,7 +448,158 @@ function downloadAudit(){
  setTimeout(()=>URL.revokeObjectURL(url),2000);
  toast('Relatório de auditoria exportado.');
 }
-function renderAll(){renderStats();renderEcoDiagnostic();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio();renderInteractions();renderAudit()}
+
+function evidenceSourcesHtml(ids){
+ const lib=window.TeiaEvidence?.SOURCES||{};
+ return (ids||[]).map(id=>lib[id]).filter(Boolean)
+  .map((src,i)=>'<a href="'+esc(src.url)+'" target="_blank" rel="noopener noreferrer">'+
+   esc(src.authors||'Publicação')+' ('+esc(src.year)+')</a>').join('');
+}
+function renderEdgeEvidence(e){
+ const el=$('edgeEvidenceInline');if(!el)return;
+ if(!e||!window.TeiaEvidence){el.textContent='Fontes não carregadas.';return}
+ const status=window.TeiaEvidence.classify(graph.nodes,e,base);
+ const links=evidenceSourcesHtml(status.sourceIds);
+ el.innerHTML='<strong>Referência: '+esc(status.statusLabel)+'</strong>'+
+ '<span>'+esc(status.note)+'</span>'+(links?'<div>'+links+'</div>':'')+
+ '<div>Uma fonte qualitativa não calibra a força desta seta.</div>';
+}
+function renderEvidence(){
+ if(!$('evidenceCards'))return;
+ if(!window.TeiaEvidence){
+  $('evidenceCards').innerHTML='<p class="evidence-empty">Biblioteca de evidências não carregada. Atualize a página.</p>';return;
+ }
+ const result=window.TeiaEvidence.assess(graph.nodes,graph.edges,base);
+ const types=[
+  ['pantanal','Relações com suporte regional'],
+  ['grupo','Mecanismos ou grupos apoiados'],
+  ['analogia','Analogias sem o par confirmado'],
+  ['outraRegiao','Dados de outras regiões'],
+  ['hipotese','Sem fonte específica cadastrada']
+ ];
+ $('evidenceCounters').innerHTML=types.map(([key,label])=>
+  '<div class="evidence-count"><strong>'+result.counts[key]+'</strong><small>'+esc(label)+'</small></div>').join('');
+ const cards=result.assessments.map(x=>{
+   const links=evidenceSourcesHtml(x.sourceIds);
+   const sourceInfo=links?'<div class="source-links">'+links+'</div>':'';
+   const edit=x.edgeId&&graph.edges.some(e=>e.id===x.edgeId)?
+     '<button type="button" data-evidence-edge="'+esc(x.edgeId)+'">Conferir seta</button>':'';
+   return '<article class="evidence-item" data-tier="'+esc(x.status)+'">'+
+    '<div class="evidence-title"><strong>'+esc(x.a)+' ↔ '+esc(x.b)+'</strong><small>'+
+      esc(x.statusLabel)+'</small></div><p>'+esc(x.note)+'</p>'+
+      sourceInfo+edit+'</article>';
+ }).join('');
+ $('evidenceCards').innerHTML=cards||'<p class="evidence-empty">Construa ou carregue uma teia. Cada relação será comparada com as fontes curadas, sem criar evidências artificiais.</p>';
+ $('evidenceSources').innerHTML=Object.values(window.TeiaEvidence.SOURCES).map(x=>
+  '<div class="evidence-source"><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+
+  esc(x.title)+'</a><small>'+esc(x.authors)+' · '+esc(x.year)+' · '+esc(x.scope)+'</small></div>').join('');
+ $('evidenceParameters').innerHTML=window.TeiaEvidence.PARAMETERS.map(x=>
+  '<article class="evidence-param"><strong>'+esc(x.name)+'</strong>'+
+  '<span class="param-tag">'+esc(x.status)+'</span>'+
+  '<p>'+esc(x.example)+' · '+esc(x.meaning)+'</p></article>').join('');
+ const list=graph.nodes.filter(n=>{
+  const d=identityOf(n,spec(n.specId));
+  return d.massNature!=='estoque'&&!['amostras','colonias','nenhum'].includes(d.unit)
+   &&Number(simInitial?.[n.id]?.count??n.count)>0;
+ });
+ const focus=$('sensitivityFocus'),old=focus.value;
+ focus.innerHTML=list.map(n=>'<option value="'+esc(n.id)+'">'+esc(n.name)+'</option>').join('');
+ if(list.some(n=>n.id===old))focus.value=old;
+ $('sensitivityRun').disabled=!list.length;
+ if(sensitivityReport&&sensitivitySignature!==getSensitivitySignature())
+  sensitivityReport=null;
+ renderSensitivityResults();
+ document.querySelectorAll('#evidenceCards [data-evidence-edge]').forEach(button=>button.onclick=()=>{
+  const id=button.getAttribute('data-evidence-edge');
+  if(!graph.edges.some(e=>e.id===id))return;
+  switchView('teia');openEdge(id);
+  $('board').scrollIntoView({behavior:'smooth',block:'center'});
+ });
+}
+function sensitivityPayload(){
+ const initialNodes=graph.nodes.map(n=>{
+  const first=simInitial?.[n.id];
+  return first?{...n,count:first.count,mass:first.mass}:{...n};
+ });
+ return {nodes:initialNodes,edges:graph.edges.map(e=>({...e})),
+   config:{
+    focusId:$('sensitivityFocus')?.value||'',
+    steps:Number($('sensitivitySteps')?.value||20),
+    model:{
+     scenario:$('scenario').value,intensity:Number($('intensity').value),
+     reproduction:Number($('reproFactor').value),capacity:Number($('capacityFactor').value),
+     predation:Number($('predationFactor').value),competition:Number($('competitionFactor').value),
+     lag:Number($('lagSteps').value)
+    },flood:pulseOptions(),bio:bioOptions()
+   }};
+}
+function getSensitivitySignature(){
+ const p=sensitivityPayload();
+ return JSON.stringify({nodes:p.nodes.map(n=>[n.id,n.specId,n.role,n.count,n.mass,n.countUnit]),
+  edges:p.edges.map(e=>[e.a,e.b,e.nature,e.kind,e.foodId,e.actorId,e.weight]),
+  config:p.config});
+}
+function renderSensitivityResults(){
+ const el=$('sensitivityResults');if(!el)return;
+ if(!sensitivityReport){
+  el.innerHTML='<p>Escolha um organismo ou índice didático e clique em <b>Comparar parâmetros</b>. A avaliação não modifica sua teia e não utiliza medições de campo.</p>';return;
+ }
+ const r=sensitivityReport;
+ const format=v=>v==null||!Number.isFinite(v)?'—':fmt(v);
+ const base=r.base.relative;
+ const rows=r.factors.map(f=>
+  '<div class="sensitivity-row"><strong>'+esc(f.label)+'</strong>'+
+  '<span>'+format(f.lowResult)+'</span><span>'+format(base)+'</span><span>'+format(f.highResult)+'</span>'+
+  '<span>'+format(f.amplitude)+' pontos</span>'+
+  '<span class="sensitivity-impact '+(f.amplitude>=10?'large':f.amplitude>=3?'medium':'small')+'">'+
+    esc(f.classification)+(f.unchanged?' (limite do controle)':'')+'</span></div>').join('');
+ el.innerHTML='<div class="sensitivity-intro"><strong>'+esc(r.focusName)+
+   ' — índice final relativo</strong><small>'+r.steps+' passos abstratos · início = 100</small></div>'+
+  '<div class="sensitivity-row sensitivity-head"><span>Parâmetro</span><span>−25%</span><span>Base</span><span>+25%</span><span>Maior desvio</span><span>Leitura</span></div>'+
+  rows+'<p class="sensitivity-hint">Base: '+format(base)+
+  '. Cada linha muda apenas o parâmetro indicado e recalcula a teia inteira. Os rótulos de intensidade do efeito usam limites visuais, não testes estatísticos.</p>';
+}
+function runSensitivity(){
+ if(!window.TeiaSensitivity)return toast('Módulo de sensibilidade indisponível.');
+ const input=sensitivityPayload();
+ try{
+  const result=window.TeiaSensitivity.evaluate(input.nodes,input.edges,input.config,{
+   population:window.TeiaDynamics,hydrology:window.TeiaFlood,
+   biogeo:window.TeiaBiogeo,interactions:window.TeiaInteractions
+  });
+  sensitivityReport=result;sensitivitySignature=getSensitivitySignature();
+  renderSensitivityResults();
+  toast('Comparação calculada sem modificar as populações da teia.');
+ }catch(e){
+  $('sensitivityResults').textContent='Não foi possível simular: '+String(e.message||e);
+ }
+}
+function exampleEvidence(){
+ if(graph.nodes.length&&!confirm('Substituir a teia atual por um exemplo com fontes? Exporte seu trabalho antes, se desejar.'))return;
+ cancelSimulation();graph={nodes:[],edges:[]};
+ const indices=[0,1,2,19,20,16,17,26,8,35,31,32,29,30];
+ for(const [k,i] of indices.entries()){
+  const n=newNode(base[i],.14+(k%4)*.225,.15+Math.floor(k/4)*.225);
+  n.id='sci'+i;graph.nodes.push(n);
+ }
+ const link=(a,b,nature,extra={})=>{
+  graph.edges.push({id:edgeId(),a:'sci'+a,b:'sci'+b,
+   nature,weight:.6,kind:'direta',direction:'forward',
+   color:nature==='decomposicao'?'#80664c':nature==='dispersao'||nature==='polinizacao'?'#bd9443':'#158954',
+   ...extra});
+ };
+ link(0,1,'herbivoria',{foodId:'sci0'});
+ link(1,2,'consumo',{foodId:'sci1'});
+ link(19,16,'dispersao',{actorId:'sci16'});
+ link(20,16,'consumo',{foodId:'sci20'});
+ link(26,17,'polinizacao',{actorId:'sci17'});
+ link(8,35,'decomposicao');
+ link(31,32,'consumo',{foodId:'sci31'});
+ link(29,30,'herbivoria',{foodId:'sci29'});
+ selected=null;persist();renderAll();switchView('validacao');
+ toast('Exemplo com fontes carregado: veja o grau de apoio e as ressalvas de cada relação.');
+}
+function renderAll(){renderStats();renderEcoDiagnostic();drawNodes();drawEdges();drawChart();renderMini();renderTable();renderDrivers();renderFlood();renderBio();renderInteractions();renderAudit();renderEvidence()}
 function attachTile(el){let id=el.dataset.spec;el.onclick=()=>{if(el.dataset.justDragged==='1'){el.dataset.justDragged='0';return}selectSpec(spec(id));addNode(spec(id))};el.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='copy'};el.onpointerdown=ev=>{if(ev.pointerType==='mouse')return;const s=spec(id),ghost=document.createElement('div');ghost.className='drag-ghost';ghost.innerHTML='<img src="'+s.image+'"><b>'+esc(s.name)+'</b>';document.body.appendChild(ghost);function move(e){ghost.style.left=e.clientX+10+'px';ghost.style.top=e.clientY-35+'px';let r=$('board').getBoundingClientRect();$('board').classList.toggle('drop-active',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)}function done(e){const travel=Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY);if(travel>10){el.dataset.justDragged='1';setTimeout(()=>el.dataset.justDragged='0',500)}window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',done);window.removeEventListener('pointercancel',done);ghost.remove();$('board').classList.remove('drop-active');let r=$('board').getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){let c=dropPoint(e);addNode(s,c.x,c.y);switchView('teia')}}move(ev);window.addEventListener('pointermove',move);window.addEventListener('pointerup',done);window.addEventListener('pointercancel',done)}}
 function dropPoint(ev){let r=$('webContent').getBoundingClientRect();return {x:Math.max(.08,Math.min(.92,(ev.clientX-r.left)/r.width)),y:Math.max(.12,Math.min(.88,(ev.clientY-r.top)/r.height))}}
 function exampleNames(){return graph.nodes.map(n=>n.name).join(', ')}
@@ -753,7 +904,7 @@ function renderMini(){
    '</div></div>';
  }).join('');
 }
-function wire(){$('auditRefresh').onclick=()=>{renderAudit();toast('Auditoria recalculada a partir das relações atuais.')};$('auditDownload').onclick=downloadAudit;document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>switchView(b.dataset.nav));document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));$('sidebarToggle').onclick=()=>{const v=$('sidebar').classList.toggle('hidden');document.querySelector('.app').classList.toggle('sidebar-closed',v);setTimeout(drawEdges,70)};$('search').oninput=renderLibrary;let fs=['Todos','Produtor','Consumidores','Decompositor','Detritívoro','Necrófago','Parasita','Polinizador','Espécies','Grupos','Comunidades','Associações','Recurso'];$('filters').innerHTML=fs.map(f=>'<button data-filter="'+f+'" class="'+(filter===f?'active':'')+'">'+(f==='Consumidores'?'Consumidores':f==='Produtor'?'Produtores':f==='Recurso'?'Recursos':f==='Comunidade'?'Comunidades':f==='Polinizador'?'Polinizadores':f==='Detritívoro'?'Detritívoros':f==='Necrófago'?'Necrófagos':f==='Parasita'?'Parasitas':f)+'</button>').join('');$('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(c=>c.classList.toggle('active',c===b));renderLibrary()});$('addPicked').onclick=()=>{const s=selectedSpec();addNode(s);switchView('teia')};$('updatePicked').onclick=()=>{
+function wire(){$('evidenceRefresh').onclick=()=>{renderEvidence();toast('Relações conferidas com as referências cadastradas.')};$('evidenceExample').onclick=exampleEvidence;$('sensitivityRun').onclick=runSensitivity;$('sensitivityFocus').onchange=()=>{sensitivityReport=null;renderSensitivityResults()};$('sensitivitySteps').onchange=()=>{sensitivityReport=null;renderSensitivityResults()};$('auditRefresh').onclick=()=>{renderAudit();toast('Auditoria recalculada a partir das relações atuais.')};$('auditDownload').onclick=downloadAudit;document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>switchView(b.dataset.nav));document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));$('sidebarToggle').onclick=()=>{const v=$('sidebar').classList.toggle('hidden');document.querySelector('.app').classList.toggle('sidebar-closed',v);setTimeout(drawEdges,70)};$('search').oninput=renderLibrary;let fs=['Todos','Produtor','Consumidores','Decompositor','Detritívoro','Necrófago','Parasita','Polinizador','Espécies','Grupos','Comunidades','Associações','Recurso'];$('filters').innerHTML=fs.map(f=>'<button data-filter="'+f+'" class="'+(filter===f?'active':'')+'">'+(f==='Consumidores'?'Consumidores':f==='Produtor'?'Produtores':f==='Recurso'?'Recursos':f==='Comunidade'?'Comunidades':f==='Polinizador'?'Polinizadores':f==='Detritívoro'?'Detritívoros':f==='Necrófago'?'Necrófagos':f==='Parasita'?'Parasitas':f)+'</button>').join('');$('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(c=>c.classList.toggle('active',c===b));renderLibrary()});$('addPicked').onclick=()=>{const s=selectedSpec();addNode(s);switchView('teia')};$('updatePicked').onclick=()=>{
  const n=selected?nodeById(selected):null;
  if(!n)return toast('Selecione um elemento da teia.');
  cancelSimulation();
