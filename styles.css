@@ -459,3 +459,27 @@
  .mission-actions button{flex:1 1 auto;font-size:11px;padding:8px}
 }
 @media(prefers-reduced-motion:reduce){.mission-scene::after{animation:none}}
+
+/* Identidade visual — Teia da Vida Pantanal (marca e favicon) */
+.topbar .logo{display:flex;align-items:center;gap:10px;flex:0 0 auto;min-width:0}
+.topbar .brand-mark{display:block;width:50px;height:50px;object-fit:contain;flex:0 0 50px;
+ background:#f1f5e8;border:1px solid #dce6cc;border-radius:50%;padding:3px;
+ box-shadow:0 2px 8px #03271845}
+.topbar .brand-title{display:inline-block;font-size:25px;line-height:1;letter-spacing:-.7px;
+ font-weight:900;white-space:nowrap;color:#fff}
+.topbar .brand-title small{font-size:10px;letter-spacing:.5px;color:#d6e8ab;font-weight:800}
+@media(max-width:1120px){
+ .topbar{gap:18px;padding-left:16px;padding-right:16px}
+ .topbar .brand-title{font-size:23px}
+ .topbar .brand-mark{width:44px;height:44px;flex-basis:44px}
+}
+@media(max-width:760px){
+ .topbar .brand-mark{width:40px;height:40px;flex-basis:40px;padding:2px}
+ .topbar .brand-title{font-size:21px}
+ .topbar .brand-title small{font-size:9px}
+ .topbar{padding-left:12px;padding-right:12px}
+}
+@media(max-width:360px){
+ .topbar .brand-title{font-size:18px}
+ .topbar .brand-mark{width:37px;height:37px;flex-basis:37px}
+}
