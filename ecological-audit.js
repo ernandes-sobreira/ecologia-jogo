@@ -36,7 +36,7 @@
     null,'Adicione produtores e consumidores, depois escolha relações e seus papéis.');
    return {status:'vazia',label:'Comece sua teia',issues:found,strengths:[],metrics:
     {elements:0,living:0,resources:0,direct:0,trophic:0,indirect:0,isolated:0,components:0,partialSpecies:0,feedingLinksPerCompartment:null},
-    levels:[],pathways:[],components:[],isolates:[],foodEdges:[],documentation:[]};
+    levels:[],pathways:[],components:[],isolates:[],foodEdges:[],detritalEdges:[],documentation:[],producers:[]};
   }
   const suspiciousSelf=new Set();
   const duplicates=new Set();
